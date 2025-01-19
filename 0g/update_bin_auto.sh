@@ -1,9 +1,6 @@
 #!/bin/bash
 PROJECT_NAME="0G"
 
-# Логотип
-source <(wget -qO- 'https://raw.githubusercontent.com/CBzeek/Nodes/refs/heads/main/!tools/logo.sh')
-
 # Переменные
 GITHUB_API_URL="https://api.github.com/repos/0glabs/0g-chain/releases/latest"
 RELEASES_URL="https://github.com/0glabs/0g-chain/releases/download"
