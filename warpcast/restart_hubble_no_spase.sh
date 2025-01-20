@@ -12,8 +12,12 @@ if ! command -v screen &> /dev/null; then
     sudo apt update && sudo apt install screen -y
 fi
 
-# Запуск установки Hubble в screen-сессии
-screen -dmS "$SCREEN_SESSION" bash -c "
+# Удаление всех старых скринов
+echo "Удаляем все старые screen-сессии..."
+screen -ls | grep Detached | awk '{print $1}' | xargs -r screen -X -S
+
+# Запуск установки Hubble в screen-сессии с выводом в консоль
+screen -S "$SCREEN_SESSION" bash -c "
     echo '=== Начало переустановки Hubble ==='
 
     # Остановка Docker-контейнеров
@@ -56,4 +60,4 @@ screen -dmS "$SCREEN_SESSION" bash -c "
 "
 
 echo "Установка Hubble запущена в screen-сессии: $SCREEN_SESSION"
-echo "Для подключения к сессии выполните команду: screen -r $SCREEN_SESSION"
+echo "Для просмотра хода установки выполните команду: screen -r $SCREEN_SESSION"
