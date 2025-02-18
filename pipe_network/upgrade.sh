@@ -2,14 +2,14 @@
 
 # Останавливаем текущую ноду (если она работает)
 echo "Остановка текущей версии ноды..."
-pkill -f pop
+sudo systemctl stop popd
 
 # Переходим в папку с нодой
 cd ~/.pipe || exit
 
 # Скачиваем новую версию
 echo "Скачивание новой версии..."
-curl -L -o pop https://dl.pipecdn.app/v0.2.6/pop
+wget -O pop https://dl.pipecdn.app/v0.2.6/pop
 
 # Выдаём права на выполнение
 chmod +x pop
@@ -18,8 +18,8 @@ chmod +x pop
 echo "Версия после обновления:"
 ./pop --version
 
-# Запускаем ноду
+# Рестартуем ноду
 echo "Запуск новой версии ноды..."
-nohup ./pop > pop.log 2>&1 &
+sudo systemctl restart popd
 
 echo "Обновление завершено!"
