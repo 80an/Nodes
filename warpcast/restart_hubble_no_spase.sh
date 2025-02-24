@@ -41,9 +41,10 @@ screen -dmS "$SCREEN_SESSION" bash -c "
     sudo journalctl --vacuum-size=100M
     sudo apt autoremove -y
 
-    # Обновление системы
+    # Обновление системы и установка необходимых пакетов
     echo 'Обновляем систему...'
     sudo apt update && sudo apt upgrade -y
+    sudo apt install cron
 
     # Загрузка и установка Hubble
     echo 'Загружаем и устанавливаем Hubble...'
