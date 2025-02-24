@@ -17,10 +17,11 @@ echo "Удаляем все старые screen-сессии..."
 screen -ls | grep Detached | awk '{print $1}' | xargs -r screen -X -S kill
 
 # Запуск установки Hubble в screen-сессии с удержанием экрана
-screen -dmS "$SCREEN_SESSION" bash -c "
-    echo '=== Начало переустановки Hubble ==='
-
+screen -S "$SCREEN_SESSION" bash -c "
+    
     sleep 5
+    
+    echo '=== Начало переустановки Hubble ==='
 
     # Остановка Docker-контейнеров
     if [ -d \"$HUBBLE_DIR\" ]; then
@@ -61,9 +62,8 @@ screen -dmS "$SCREEN_SESSION" bash -c "
 
     echo '=== Переустановка завершена ==='
     
-    tail -f /dev/null  # <-- screen останется активным
+    exec bash  # <-- Оставляет shell открытым, чтобы screen не закрылся
 "
 
-echo "Установка Hubble запущена в screen-сессии: $SCREEN_SESSION"
-echo "Для подключения: screen -r $SCREEN_SESSION"
 echo "Для выхода из screen без остановки процесса нажмите: Ctrl + A, затем D"
+echo "Для подключения: screen -r $SCREEN_SESSION"
