@@ -14,9 +14,9 @@ fi
 
 # Удаление всех старых screen-сессий
 echo "Удаляем все старые screen-сессии..."
-screen -ls | grep Detached | awk '{print $1}' | xargs -r screen -X -S quit
+screen -ls | grep Detached | awk '{print $1}' | xargs -r screen -X -S kill
 
-# Запуск установки Hubble в screen-сессии
+# Запуск установки Hubble в screen-сессии с удержанием экрана
 screen -dmS "$SCREEN_SESSION" bash -c "
     echo '=== Начало переустановки Hubble ==='
 
@@ -59,7 +59,10 @@ screen -dmS "$SCREEN_SESSION" bash -c "
     sudo iptables -L -v -n
 
     echo '=== Переустановка завершена ==='
+    
+    tail -f /dev/null  # <-- screen останется активным
 "
 
 echo "Установка Hubble запущена в screen-сессии: $SCREEN_SESSION"
-echo "Для просмотра хода установки выполните команду: screen -r $SCREEN_SESSION"
+echo "Для подключения: screen -r $SCREEN_SESSION"
+echo "Для выхода из screen без остановки процесса нажмите: Ctrl + A, затем D"
