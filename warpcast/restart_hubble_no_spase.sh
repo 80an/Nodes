@@ -20,6 +20,8 @@ screen -ls | grep Detached | awk '{print $1}' | xargs -r screen -X -S
 screen -S "$SCREEN_SESSION" bash -c "
     echo '=== Начало переустановки Hubble ==='
 
+    sleep 5
+
     # Остановка Docker-контейнеров
     if [ -d \"$HUBBLE_DIR\" ]; then
         cd \"$HUBBLE_DIR\" && docker compose down
