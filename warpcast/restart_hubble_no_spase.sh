@@ -12,12 +12,12 @@ if ! command -v screen &> /dev/null; then
     sudo apt update && sudo apt install screen -y
 fi
 
-# Удаление всех старых скринов
+# Удаление всех старых screen-сессий
 echo "Удаляем все старые screen-сессии..."
-screen -ls | grep Detached | awk '{print $1}' | xargs -r screen -X -S
+screen -ls | grep Detached | awk '{print $1}' | xargs -r screen -X -S quit
 
-# Запуск установки Hubble в screen-сессии с выводом в консоль
-screen -S "$SCREEN_SESSION" bash -c "
+# Запуск установки Hubble в screen-сессии
+screen -dmS "$SCREEN_SESSION" bash -c "
     echo '=== Начало переустановки Hubble ==='
 
     sleep 5
@@ -51,11 +51,11 @@ screen -S "$SCREEN_SESSION" bash -c "
 
     # Подготавливаем работу с портами
     echo 'Настраиваем порты...'
-    sudo apt-get install iptables-persistent -y && sudo netfilter-persistent save
+    sudo apt-get install -y iptables-persistent
     sudo iptables -A INPUT -p tcp --dport 2281 -j ACCEPT
     sudo iptables -A INPUT -p tcp --dport 2282 -j ACCEPT
     sudo iptables -A INPUT -p tcp --dport 2283 -j ACCEPT
-    sudo iptables-save > /etc/iptables/rules.v4
+    sudo netfilter-persistent save
     sudo iptables -L -v -n
 
     echo '=== Переустановка завершена ==='
