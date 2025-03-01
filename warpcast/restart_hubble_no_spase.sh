@@ -6,7 +6,29 @@ SCREEN_SESSION="hubble_install"
 # Папка Hubble
 HUBBLE_DIR="$HOME/hubble"
 
-# Проверяем наличие screen
+# Остановка ноды и Docker-контейнеров перед установкой screen
+echo "Останавливаем ноду и Docker-контейнеры..."
+if [ -d "$HUBBLE_DIR" ]; then
+    cd "$HUBBLE_DIR"
+    docker compose down || docker stop $(docker ps -q)  # Останавливаем всё, если docker-compose нет
+fi
+
+# Удаление старых данных, освобождение места
+echo "Принудительно удаляем старые данные Hubble..."
+rm -rf "$HUBBLE_DIR"
+mkdir -p "$HUBBLE_DIR"
+
+# Очистка Docker и освобождение места
+echo "Очищаем Docker..."
+docker system prune -af
+docker volume prune -f
+
+# Удаление старых логов
+echo "Удаляем старые логи..."
+sudo journalctl --vacuum-size=100M
+sudo apt autoremove -y
+
+# Проверяем наличие screen и устанавливаем при необходимости
 if ! command -v screen &> /dev/null; then
     echo "Screen не установлен. Устанавливаем..."
     sudo apt update && sudo apt install screen -y
@@ -23,29 +45,10 @@ screen -S "$SCREEN_SESSION" bash -c "
     
     echo '=== Начало переустановки Hubble ==='
 
-    # Остановка Docker-контейнеров
-    if [ -d \"$HUBBLE_DIR\" ]; then
-        cd \"$HUBBLE_DIR\" && docker compose down
-    fi
-
-    # Удаление старых данных
-    echo 'Удаляем старые данные...'
-    rm -rf \"$HUBBLE_DIR\"
-
-    # Очистка Docker и освобождение места
-    echo 'Очищаем Docker...'
-    docker system prune -af
-    docker volume prune -f
-
-    # Удаление старых логов
-    echo 'Удаляем старые логи...'
-    sudo journalctl --vacuum-size=100M
-    sudo apt autoremove -y
-
     # Обновление системы и установка необходимых пакетов
     echo 'Обновляем систему...'
     sudo apt update && sudo apt upgrade -y
-    sudo apt install cron
+    sudo apt install -y cron iptables-persistent
 
     # Загрузка и установка Hubble
     echo 'Загружаем и устанавливаем Hubble...'
@@ -53,7 +56,6 @@ screen -S "$SCREEN_SESSION" bash -c "
 
     # Подготавливаем работу с портами
     echo 'Настраиваем порты...'
-    sudo apt-get install -y iptables-persistent
     sudo iptables -A INPUT -p tcp --dport 2281 -j ACCEPT
     sudo iptables -A INPUT -p tcp --dport 2282 -j ACCEPT
     sudo iptables -A INPUT -p tcp --dport 2283 -j ACCEPT
