@@ -10,11 +10,15 @@ set -e  # Остановка при ошибке
 if ! command -v go &> /dev/null
 then
     echo "Устанавливаем Go..."
-    wget https://go.dev/dl/go1.18.linux-amd64.tar.gz
-    tar -C /usr/local -xzf go1.18.linux-amd64.tar.gz
-    rm go1.18.linux-amd64.tar.gz
+    wget https://golang.org/dl/go1.23.1.linux-amd64.tar.gz
+    sudo tar -C /usr/local -xzf go1.23.1.linux-amd64.tar.gz
+    rm go1.23.1.linux-amd64.tar.gz
     export PATH=$PATH:/usr/local/go/bin
+    export GOPATH=$HOME/go
+    export PATH=$PATH:$GOPATH/bin
     echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.bashrc
+    echo 'export GOPATH=$HOME/go' >> ~/.bashrc
+    echo 'export PATH=$PATH:$GOPATH/bin' >> ~/.bashrc
     source ~/.bashrc
 fi
 
