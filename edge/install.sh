@@ -82,13 +82,19 @@ echo "Переменные окружения настроены."
 # 4. Запуск Merkle-сервиса в screen-сессии
 cd risc0-merkle-service
 screen -S layeredge_server -dm bash -c "cargo build && cargo run"
+
+echo "Ожидание запуска Merkle-сервиса..."
+while ! grep -q "Starting server on port 3001" <(tail -f screenlog.0); do
+    sleep 2
+done
+
+echo "Merkle-сервис успешно запущен!"
 cd ..
 
 echo "Merkle-сервис запущен в screen-сессии. Для возврата: screen -r layeredge_server"
 
 # 5. Компиляция и запуск Light Node
-sleep 5  # Ожидание инициализации Merkle-сервиса
 go build
-./light-node
+./light-node &
 
 echo "LayerEdge Light Node запущена!"
