@@ -84,7 +84,11 @@ cd risc0-merkle-service
 screen -S layeredge_server -dm bash -c "cargo build && cargo run"
 
 echo "Ожидание запуска Merkle-сервиса..."
-while ! grep -q "Starting server on port 3001" <(tail -f screenlog.0); do
+while true; do
+    screen -S layeredge_server -X hardcopy /tmp/screenlog.tmp
+    if grep -q "Starting server on port 3001" /tmp/screenlog.tmp; then
+        break
+    fi
     sleep 2
 done
 
