@@ -98,8 +98,8 @@ cd ..
 
 echo "Merkle-сервис запущен в screen-сессии. Для возврата: screen -r layeredge_server"
 
-# 5. Компиляция и запуск Light Node
-go build
-./light-node &
+# 5. Компиляция и запуск Light Node в screen-сессии
+screen -S lightnode -L -Logfile lightnode.log -m bash -c 'go build && ./light-node'
+screen -r lightnode
 
-echo "LayerEdge Light Node запущена!"
+echo "LayerEdge Light Node запущена в screen-сессии!"
