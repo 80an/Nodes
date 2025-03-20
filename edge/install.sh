@@ -81,13 +81,14 @@ echo "Переменные окружения настроены."
 
 # 4. Запуск Merkle-сервиса в screen-сессии
 cd risc0-merkle-service
-screen -S layeredge_server -dm bash -c "cargo build && cargo run"
+screen -dmS layeredge_server bash -c 'cargo build && cargo run'
 
 echo "Ожидание запуска Merkle-сервиса..."
 while true; do
-    screen -S layeredge_server -X hardcopy /tmp/screenlog.tmp
-    if grep -q "Starting server on port 3001" /tmp/screenlog.tmp; then
-        break
+    if screen -S layeredge_server -X stuff $'echo SERVER_CHECK\n'; then
+        if screen -S layeredge_server -X hardcopy /tmp/screenlog.tmp && grep -q "Starting server on port 3001" /tmp/screenlog.tmp; then
+            break
+        fi
     fi
     sleep 2
 done
