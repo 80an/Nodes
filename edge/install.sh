@@ -78,18 +78,19 @@ echo "Переменные окружения настроены."
 
 # 4. Запуск Merkle-сервиса в screen-сессии
 cd risc0-merkle-service
-# Запускаем Merkle-сервис в интерактивной screen-сессии
-screen -S layeredge_server bash -c 'cargo build && cargo run'
+# Запускаем Merkle-сервис в скрытом режиме
+screen -dmS layeredge_server bash -c 'cargo build && cargo run'
 
 # Ожидание запуска Merkle-сервиса
 echo "Ожидание запуска Merkle-сервиса..."
 while true; do
-    # Проверяем, что процесс сервера существует, используя команду ps
-    if ps aux | grep -v grep | grep "cargo run" > /dev/null; then
-        sleep 5  # Ждём 5 секунд после запуска
-        break  # После этого прерываем цикл
+    # Проверяем логи на наличие строки "Starting server on port 3001"
+    if screen -S layeredge_server -X hardcopy /tmp/merkle-service.log && grep -q "Starting server on port 3001" /tmp/merkle-service.log; then
+        sleep 5  # Пауза в 5 секунд после того, как сервер запустится
+        break  # Прерываем цикл после успешного старта
     fi
-    sleep 2  # Проверяем каждую 2 секунды
+    sleep 2  # Проверка каждую 2 секунды
+    echo -n "."
 done
 
 echo "\nMerkle-сервис успешно запущен!"
@@ -100,6 +101,7 @@ cd ..
 echo "Merkle-сервис запущен в screen-сессии. Для возврата: screen -r layeredge_server"
 
 # 5. Компиляция и запуск Light Node в новом screen-сессии
+echo "Запуск Light Node в screen-сессии..."
 screen -S lightnode -L -Logfile lightnode.log bash -c 'go build && ./light-node'
 screen -r lightnode
 
