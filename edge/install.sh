@@ -78,7 +78,8 @@ echo "Переменные окружения настроены."
 
 # 4. Запуск Merkle-сервиса в screen-сессии
 cd risc0-merkle-service
-screen -dmS layeredge_server bash -c 'cargo build && cargo run'
+# Запускаем Merkle-сервис в интерактивной screen-сессии
+screen -S layeredge_server bash -c 'cargo build && cargo run'
 
 # Ожидание запуска Merkle-сервиса
 echo "Ожидание запуска Merkle-сервиса..."
@@ -88,10 +89,10 @@ while true; do
         break
     fi
     sleep 2
-    echo -n "."
 done
 
 echo "\nMerkle-сервис успешно запущен!"
+# После завершения установки сервиса, отключаемся от screen
 screen -d layeredge_server  # Оставляем screen активным, но выходим из него
 cd ..
 
