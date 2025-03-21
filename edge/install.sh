@@ -84,11 +84,12 @@ screen -S layeredge_server bash -c 'cargo build && cargo run'
 # Ожидание запуска Merkle-сервиса
 echo "Ожидание запуска Merkle-сервиса..."
 while true; do
-    # Проверяем, содержится ли строка "Starting server on port 3001" в логе
-    if screen -S layeredge_server -X log on && screen -S layeredge_server -X logfile /tmp/merkle-service.log && tail -n 10 /tmp/merkle-service.log | grep -q "Starting server on port 3001"; then
+    # Проверка, работает ли процесс сервера (проверяем на наличие порта 3001)
+    if lsof -i:3001 &> /dev/null; then
         sleep 5  # Ждём 5 секунд после запуска
         break  # После этого прерываем цикл
     fi
+    sleep 2  # Ждём немного и проверяем снова
 done
 
 echo "\nMerkle-сервис успешно запущен!"
