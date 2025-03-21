@@ -84,12 +84,12 @@ screen -S layeredge_server bash -c 'cargo build && cargo run'
 # Ожидание запуска Merkle-сервиса
 echo "Ожидание запуска Merkle-сервиса..."
 while true; do
-    # Проверка, работает ли процесс сервера (проверяем на наличие порта 3001)
-    if lsof -i:3001 &> /dev/null; then
+    # Проверяем, что процесс сервера существует, используя команду ps
+    if ps aux | grep -v grep | grep "cargo run" > /dev/null; then
         sleep 5  # Ждём 5 секунд после запуска
         break  # После этого прерываем цикл
     fi
-    sleep 2  # Ждём немного и проверяем снова
+    sleep 2  # Проверяем каждую 2 секунды
 done
 
 echo "\nMerkle-сервис успешно запущен!"
