@@ -75,11 +75,3 @@ PRIVATE_KEY='$PRIVATE_KEY'
 EOL
 
 echo "Переменные окружения настроены."
-
-echo "Создаем скрин-сессию, запускаем Merkle server."
-sleep 3
-screen -S layeredge_server
-echo "ВНИМАНИЕ!!! Как только вы увидите надпись Starting server on port 3001, можно закрыть этот скрин Ctrl+A+D"
-sleep 10
-cd && cd light-node/risc0-merkle-service
-cargo build && cargo run
