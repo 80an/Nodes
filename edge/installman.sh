@@ -57,18 +57,19 @@ echo -n "Введите PRIVATE_KEY: "
 read -s PRIVATE_KEY
 echo
 export PRIVATE_KEY
-export GRPC_URL=grpc.testnet.layeredge.io:9090
-export CONTRACT_ADDR=cosmos1ufs3tlq4umljk0qfe8k5ya0x6hpavn897u2cnf9k0en9jr7qarqqt56709
-export ZK_PROVER_URL=http://127.0.0.1:3001
-export API_REQUEST_TIMEOUT=100
-export POINTS_API=http://127.0.0.1:8080
+export GRPC_URL=grpc.testnet.layeredge.io:9090  >> ~/.bashrc
+export CONTRACT_ADDR=cosmos1ufs3tlq4umljk0qfe8k5ya0x6hpavn897u2cnf9k0en9jr7qarqqt56709  >> ~/.bashrc
+export ZK_PROVER_URL=http://127.0.0.1:3001  >> ~/.bashrc
+export API_REQUEST_TIMEOUT=100  >> ~/.bashrc
+export POINTS_API=http://127.0.0.1:8080  >> ~/.bashrc
+source ~/.bashrc
 
 cat > .env <<EOL
 GRPC_URL=grpc.testnet.layeredge.io:9090
 CONTRACT_ADDR=cosmos1ufs3tlq4umljk0qfe8k5ya0x6hpavn897u2cnf9k0en9jr7qarqqt56709
 ZK_PROVER_URL=http://127.0.0.1:3001
 # Альтернативный URL
-ZK_PROVER_URL=https://layeredge.mintair.xyz/
+# ZK_PROVER_URL=https://layeredge.mintair.xyz/
 API_REQUEST_TIMEOUT=100
 POINTS_API=http://127.0.0.1:8080
 PRIVATE_KEY='$PRIVATE_KEY'
