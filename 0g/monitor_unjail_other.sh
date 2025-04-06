@@ -98,7 +98,7 @@ check_blocks() {
   RPC_PORT=$(grep -m 1 -oP '^laddr = "\K[^"]+' "$HOME/$PROJECT_DIR/config/config.toml" | cut -d ':' -f 3)
 
   # Список RPC
-  RPC_URLS=("https://rpc.0g.noders.services" "https://0g-rpc.stavr.tech" "https://og-t-rpc.noders.services/status")
+  RPC_URLS=("https://rpc.0g.noders.services" "https://0g-rpc.stavr.tech" "https://og-t-rpc.noders.services/status" "https://og-testnet-rpc.itrocket.net/status")
   CURRENT_RPC=""
 
   # Проверка и сравнение высоты блоков
