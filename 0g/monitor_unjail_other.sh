@@ -56,26 +56,48 @@ send_telegram_alert() {
 # Функция проверки высоты блоков и перезапуска ноды при отставании
 check_blocks() {
   RPC_PORT=$(grep -m 1 -oP '^laddr = "\K[^"]+' "$HOME/$PROJECT_DIR/config/config.toml" | cut -d ':' -f 3)
+
+  # Список RPC
+  RPC_URLS=("https://rpc.0g.noders.services" "https://0g-rpc.stavr.tech")
+  CURRENT_RPC=""
+
+  # Функция получения высоты из первого доступного RPC
+  get_rpc_height() {
+    for url in "${RPC_URLS[@]}"; do
+      height=$(curl -s "$url/status" | jq -r '.result.sync_info.latest_block_height')
+      if [[ "$height" =~ ^[0-9]+$ ]]; then
+        if [ "$url" != "$CURRENT_RPC" ]; then
+          CURRENT_RPC="$url"
+          echo -e "${B_YELLOW}🔄 Используется новый RPC: $CURRENT_RPC${NO_COLOR}"
+          send_telegram_alert "ℹ️ Переключение на доступный RPC: $CURRENT_RPC"
+        fi
+        echo "$height"
+        return
+      else
+        echo -e "${B_YELLOW}⚠️ RPC не ответил: $url${NO_COLOR}"
+      fi
+    done
+    echo "0"
+  }
+
   while true; do
     NODE_HEIGHT=$(curl -s localhost:$RPC_PORT/status | jq -r '.result.sync_info.latest_block_height')
-    RPC_HEIGHT=$(curl -s https://og-testnet-rpc.itrocket.net/status | jq -r '.result.sync_info.latest_block_height')
+    RPC_HEIGHT=$(get_rpc_height)
 
-    if ! [[ "$NODE_HEIGHT" =~ ^[0-9]+$ ]] || ! [[ "$RPC_HEIGHT" =~ ^[0-9]+$ ]]; then
-      echo -e "${B_RED}Error: Invalid block height data. Retrying...${NO_COLOR}"
+    if ! [[ "$NODE_HEIGHT" =~ ^[0-9]+$ ]] || [ "$RPC_HEIGHT" -eq 0 ]; then
+      echo -e "${B_RED}❌ Ошибка получения высот. Повтор через 5 секунд...${NO_COLOR}"
       sleep 5
       continue
     fi
 
     BLOCKS_LEFT=$((RPC_HEIGHT - NODE_HEIGHT))
-    if [ "$BLOCKS_LEFT" -lt 0 ]; then
-      BLOCKS_LEFT=0
-    fi
+    [ "$BLOCKS_LEFT" -lt 0 ] && BLOCKS_LEFT=0
 
     echo -e "Node Height: ${B_GREEN}$NODE_HEIGHT${NO_COLOR} | RPC Height: ${B_YELLOW}$RPC_HEIGHT${NO_COLOR} | Blocks Left: ${B_RED}$BLOCKS_LEFT${NO_COLOR}"
 
     if [ "$BLOCKS_LEFT" -gt 5 ]; then
-      echo -e "${B_RED}Difference greater than 5. Restarting node...${NO_COLOR}"
-      send_telegram_alert "⚠️ Node is behind by $BLOCKS_LEFT blocks. Restarting..."
+      echo -e "${B_RED}⚠️ Разница больше 5 блоков. Перезапуск...${NO_COLOR}"
+      send_telegram_alert "⚠️ Node is behind by $BLOCKS_LEFT blocks (using RPC: $CURRENT_RPC). Restarting..."
       sudo systemctl restart ogd
       sleep 30
     fi
