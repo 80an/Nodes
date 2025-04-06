@@ -63,47 +63,42 @@ check_blocks() {
 
   # Функция получения высоты из первого доступного RPC
   get_rpc_height() {
-    for url in "${RPC_URLS[@]}"; do
-      height=$(curl -s "$url/status" | jq -r '.result.sync_info.latest_block_height')
-      if [[ "$height" =~ ^[0-9]+$ ]]; then
-        if [ "$url" != "$CURRENT_RPC" ]; then
-          CURRENT_RPC="$url"
-          echo -e "${B_YELLOW}🔄 Используется новый RPC: $CURRENT_RPC${NO_COLOR}"
-          send_telegram_alert "ℹ️ Переключение на доступный RPC: $CURRENT_RPC"
-        fi
-        echo "$height"
-        return
-      else
-        echo -e "${B_YELLOW}⚠️ RPC не ответил: $url${NO_COLOR}"
+  local now_ts=$(date +%s)
+  local error_rpc_ts_file="/tmp/rpc_error_timestamp"
+
+  for url in "${RPC_URLS[@]}"; do
+    response=$(curl -s "$url/status")
+    height=$(echo "$response" | jq -r '.result.sync_info.latest_block_height' 2>/dev/null)
+
+    if [[ "$height" =~ ^[0-9]+$ ]]; then
+      if [ "$url" != "$CURRENT_RPC" ]; then
+        CURRENT_RPC="$url"
+        echo -e "${B_YELLOW}🔄 Используется новый RPC: $CURRENT_RPC${NO_COLOR}" >&2
+        send_telegram_alert "ℹ️ Переключение на доступный RPC: $CURRENT_RPC"
       fi
-    done
-    echo "0"
-  }
-
-  while true; do
-    NODE_HEIGHT=$(curl -s localhost:$RPC_PORT/status | jq -r '.result.sync_info.latest_block_height')
-    RPC_HEIGHT=$(get_rpc_height)
-
-    if ! [[ "$NODE_HEIGHT" =~ ^[0-9]+$ ]] || [ "$RPC_HEIGHT" -eq 0 ]; then
-      echo -e "${B_RED}❌ Ошибка получения высот. Повтор через 5 секунд...${NO_COLOR}"
-      sleep 5
-      continue
+      return 0  # успешно
+    else
+      echo -e "${B_YELLOW}⚠️ RPC не ответил: $url${NO_COLOR}" >&2
     fi
-
-    BLOCKS_LEFT=$((RPC_HEIGHT - NODE_HEIGHT))
-    [ "$BLOCKS_LEFT" -lt 0 ] && BLOCKS_LEFT=0
-
-    echo -e "Node Height: ${B_GREEN}$NODE_HEIGHT${NO_COLOR} | RPC Height: ${B_YELLOW}$RPC_HEIGHT${NO_COLOR} | Blocks Left: ${B_RED}$BLOCKS_LEFT${NO_COLOR}"
-
-    if [ "$BLOCKS_LEFT" -gt 5 ]; then
-      echo -e "${B_RED}⚠️ Разница больше 5 блоков. Перезапуск...${NO_COLOR}"
-      send_telegram_alert "⚠️ Node is behind by $BLOCKS_LEFT blocks (using RPC: $CURRENT_RPC). Restarting..."
-      sudo systemctl restart ogd
-      sleep 30
-    fi
-
-    sleep 5
   done
+
+  # Если дошли сюда — ни один RPC не работает
+  echo "0"
+
+  # Проверим, когда в последний раз отправляли сообщение
+  if [ -f "$error_rpc_ts_file" ]; then
+    last_sent_ts=$(cat "$error_rpc_ts_file")
+  else
+    last_sent_ts=0
+  fi
+
+  # Если прошло больше 10 минут (600 секунд), шлём уведомление
+  if [ $((now_ts - last_sent_ts)) -ge 600 ]; then
+    send_telegram_alert "🚫 Все RPC недоступны! Ни один из RPC не отвечает."
+    echo "$now_ts" > "$error_rpc_ts_file"
+  fi
+
+  return 1  # ошибка
 }
 
 # Функция проверки статуса валидатора и автоматического unjail
