@@ -10,32 +10,31 @@ B_RED="\e[31m"
 NO_COLOR="\e[0m"
 
 # Запрашиваем пароль от keyring
-
 echo
 read -s -p "Enter keyring password: " KEYRING_PASSWORD
 echo
 
-# Получаем имя кошелька
-WALLET_NAME=$(printf "%s" "$KEYRING_PASSWORD" | 0gchaind keys list --output json | jq -r '.[0].name')
+# Запрашиваем, что мы хотим ввести: имя или адрес кошелька
+echo "Choose the way to specify wallet:"
+echo "1) Enter wallet address"
+echo "2) Enter wallet name"
+read -p "Enter your choice (1 or 2): " CHOICE
 
-# Выводим значение WALLET_NAME для отладки
-echo "Wallet name: $WALLET_NAME"
-
-if [ -z "$WALLET_NAME" ]; then
-  echo -e "${B_RED}Error: Wallet name is empty. Please check your keyring password.${NO_COLOR}"
+if [ "$CHOICE" -eq 1 ]; then
+  # Вводим адрес кошелька
+  read -p "Enter wallet address: " WALLET_ADDRESS
+  WALLET_NAME=$(printf "%s" "$KEYRING_PASSWORD" | 0gchaind keys show "$WALLET_ADDRESS" --bech val -a)
+elif [ "$CHOICE" -eq 2 ]; then
+  # Вводим имя кошелька
+  read -p "Enter wallet name: " WALLET_NAME
+  WALLET_ADDRESS=$(printf "%s" "$KEYRING_PASSWORD" | 0gchaind keys show "$WALLET_NAME" --bech val -a)
+else
+  echo -e "${B_RED}Invalid choice. Please select 1 or 2.${NO_COLOR}"
   exit 1
 fi
 
 # Получаем адрес валидатора
-VALIDATOR_ADDRESS=$(printf "%s" "$KEYRING_PASSWORD" | 0gchaind keys show "$WALLET_NAME" --bech val -a)
-
-# Выводим адрес валидатора для отладки
-echo "Validator address: $VALIDATOR_ADDRESS"
-
-if [ -z "$VALIDATOR_ADDRESS" ]; then
-  echo -e "${B_RED}Error: Validator address is empty. Please check your keyring password or wallet name.${NO_COLOR}"
-  exit 1
-fi
+VALIDATOR_ADDRESS="$WALLET_ADDRESS"
 
 # Получаем адрес Telegram-бота и Chat ID
 read -p "Enter your Telegram Bot Token: " TELEGRAM_BOT_TOKEN
@@ -47,12 +46,6 @@ send_telegram_alert() {
   curl -s -X POST "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendMessage" \
        -d chat_id="$TELEGRAM_CHAT_ID" \
        -d text="$message"
-}
-
-# Функция записи логов
-log_message() {
-  local message="$1"
-  echo "$(date) - $message" >> "$HOME/$PROJECT_DIR/logs.txt"
 }
 
 # Функция проверки высоты блоков и перезапуска ноды при отставании
@@ -77,7 +70,6 @@ check_blocks() {
 
     if [ "$BLOCKS_LEFT" -gt 5 ]; then
       echo -e "${B_RED}Difference greater than 5. Restarting node...${NO_COLOR}"
-      log_message "Difference greater than 5 blocks. Restarting node..."
       send_telegram_alert "⚠️ Node is behind by $BLOCKS_LEFT blocks. Restarting..."
       sudo systemctl restart ogd
       sleep 30
@@ -87,5 +79,26 @@ check_blocks() {
   done
 }
 
+# Функция проверки статуса валидатора и автоматического unjail
+check_validator() {
+  while true; do
+    jailed_status=$(printf "%s" "$KEYRING_PASSWORD" | 0gchaind q staking validator "$VALIDATOR_ADDRESS" --output json | jq -r '.jailed')
+    echo "Validator jailed status: $jailed_status"
+    if [ "$jailed_status" = "true" ]; then
+      echo -e "${B_RED}Validator is jailed! Executing unjail command...${NO_COLOR}"
+      send_telegram_alert "🚨 Validator is jailed! Attempting unjail..."
+      printf "%s" "$KEYRING_PASSWORD" | 0gchaind tx slashing unjail \
+        --from "$WALLET_NAME" \
+        --chain-id zgtendermint_16600-2 \
+        --gas-adjustment 1.7 \
+        --gas auto \
+        --gas-prices 0.003ua0gi \
+        -y
+    fi
+    sleep 300
+  done
+}
+
 check_blocks &
+check_validator &
 wait
