@@ -58,6 +58,10 @@ get_rpc_height() {
   local now_ts=$(date +%s)
   local error_rpc_ts_file="/tmp/rpc_error_timestamp"
 
+  # Список RPC
+  RPC_URLS=("https://rpc.0g.noders.services" "https://0g-rpc.stavr.tech" "https://og-t-rpc.noders.services/status" "https://og-testnet-rpc.itrocket.net/status")
+  CURRENT_RPC=""
+
   for url in "${RPC_URLS[@]}"; do
     response=$(curl -s "$url/status")
     height=$(echo "$response" | jq -r '.result.sync_info.latest_block_height' 2>/dev/null)
@@ -97,19 +101,28 @@ get_rpc_height() {
 check_blocks() {
   RPC_PORT=$(grep -m 1 -oP '^laddr = "\K[^"]+' "$HOME/$PROJECT_DIR/config/config.toml" | cut -d ':' -f 3)
 
-  # Список RPC
-  RPC_URLS=("https://rpc.0g.noders.services" "https://0g-rpc.stavr.tech" "https://og-t-rpc.noders.services/status" "https://og-testnet-rpc.itrocket.net/status")
-  CURRENT_RPC=""
-
-  # Проверка и сравнение высоты блоков
+  # Проверка высоты блоков
   while true; do
     current_height=$(get_rpc_height)
 
     # Проверяем, что переменная current_height содержит целое число
     if [[ "$current_height" =~ ^[0-9]+$ ]]; then
+      echo -e "Node Height: ${B_GREEN}$current_height${NO_COLOR}"
+
       # Если высота блоков больше или равна нужной (например, 10000)
       if [ "$current_height" -lt 10000 ]; then
         send_telegram_alert "🚨 Высота блоков меньше минимального порога: $current_height"
+      fi
+
+      # Если разница между высотами больше 5 блоков, перезапускаем ноду
+      NODE_HEIGHT=$(curl -s localhost:$RPC_PORT/status | jq -r '.result.sync_info.latest_block_height')
+      BLOCKS_LEFT=$((current_height - NODE_HEIGHT))
+
+      if [ "$BLOCKS_LEFT" -gt 5 ]; then
+        echo -e "${B_RED}Отставание более чем на 5 блоков. Перезапуск ноды...${NO_COLOR}"
+        sudo systemctl restart ogd
+        # Ждём 30 секунд после перезапуска, чтобы нода успела восстановиться
+        sleep 30
       fi
     else
       send_telegram_alert "🚨 Проблемы с RPC: Высота блоков не доступна."
@@ -135,10 +148,11 @@ check_validator() {
         --gas-prices 0.003ua0gi \
         -y
     fi
+    # Ждём 5 минут (300 секунд) до следующей проверки
     sleep 300
   done
 }
 
-check_blocks &
-check_validator &
+check_blocks & 
+check_validator & 
 wait
