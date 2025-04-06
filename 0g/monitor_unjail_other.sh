@@ -53,48 +53,16 @@ send_telegram_alert() {
        -d text="$message"
 }
 
-# Функция получения высоты из первого доступного RPC
+# Функция получения высоты из RPC
 get_rpc_height() {
-  local now_ts=$(date +%s)
-  local error_rpc_ts_file="/tmp/rpc_error_timestamp"
+  response=$(curl -s https://og-t-rpc.noders.services/status)
+  height=$(echo "$response" | jq -r '.result.sync_info.latest_block_height' 2>/dev/null)
 
-  # Список RPC
-  RPC_URLS=("https://rpc.0g.noders.services" "https://0g-rpc.stavr.tech" "https://og-t-rpc.noders.services/status" "https://og-testnet-rpc.itrocket.net/status")
-  CURRENT_RPC=""
-
-  for url in "${RPC_URLS[@]}"; do
-    response=$(curl -s "$url/status")
-    height=$(echo "$response" | jq -r '.result.sync_info.latest_block_height' 2>/dev/null)
-
-    if [[ "$height" =~ ^[0-9]+$ ]]; then
-      if [ "$url" != "$CURRENT_RPC" ]; then
-        CURRENT_RPC="$url"
-        echo -e "${B_YELLOW}🔄 Используется новый RPC: $CURRENT_RPC${NO_COLOR}" >&2
-        send_telegram_alert "ℹ️ Переключение на доступный RPC: $CURRENT_RPC"
-      fi
-      echo "$height"
-      return 0
-    else
-      echo -e "${B_YELLOW}⚠️ RPC не ответил: $url${NO_COLOR}" >&2
-    fi
-  done
-
-  # Если ни один RPC не сработал
-  echo "0"
-
-  # Отправка алерта, если прошло больше 10 минут
-  if [ -f "$error_rpc_ts_file" ]; then
-    last_sent_ts=$(cat "$error_rpc_ts_file")
+  if [[ "$height" =~ ^[0-9]+$ ]]; then
+    echo "$height"
   else
-    last_sent_ts=0
+    echo "0"
   fi
-
-  if [ $((now_ts - last_sent_ts)) -ge 600 ]; then
-    send_telegram_alert "🚫 Все RPC недоступны! Ни один из RPC не отвечает."
-    echo "$now_ts" > "$error_rpc_ts_file"
-  fi
-
-  return 1
 }
 
 # Функция проверки высоты блоков и перезапуска ноды при отставании
@@ -114,10 +82,11 @@ check_blocks() {
         send_telegram_alert "🚨 Высота блоков меньше минимального порога: $current_height"
       fi
 
-      # Если разница между высотами больше 5 блоков, перезапускаем ноду
+      # Получаем текущую высоту блоков ноды
       NODE_HEIGHT=$(curl -s localhost:$RPC_PORT/status | jq -r '.result.sync_info.latest_block_height')
       BLOCKS_LEFT=$((current_height - NODE_HEIGHT))
 
+      # Если разница между высотами больше 5 блоков, перезапускаем ноду
       if [ "$BLOCKS_LEFT" -gt 5 ]; then
         echo -e "${B_RED}Отставание более чем на 5 блоков. Перезапуск ноды...${NO_COLOR}"
         sudo systemctl restart ogd
@@ -143,9 +112,9 @@ check_validator() {
       printf "%s" "$KEYRING_PASSWORD" | 0gchaind tx slashing unjail \
         --from "$WALLET_NAME" \
         --chain-id zgtendermint_16600-2 \
-        --gas-adjustment 1.7 \
+        --gas-adjustment 2.0 \
         --gas auto \
-        --gas-prices 0.003ua0gi \
+        --gas-prices 0.005ua0gi \
         -y
     fi
     # Ждём 5 минут (300 секунд) до следующей проверки
