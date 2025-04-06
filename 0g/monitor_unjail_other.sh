@@ -60,7 +60,8 @@ check_blocks() {
   # Список RPC
   RPC_URLS=("https://rpc.0g.noders.services" "https://0g-rpc.stavr.tech")
   CURRENT_RPC=""
-
+}
+  
   # Функция получения высоты из первого доступного RPC
   get_rpc_height() {
   local now_ts=$(date +%s)
