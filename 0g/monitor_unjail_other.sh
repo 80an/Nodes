@@ -10,6 +10,7 @@ B_RED="\e[31m"
 NO_COLOR="\e[0m"
 
 # Запрашиваем пароль от keyring
+echo
 read -s -p "Enter keyring password: " KEYRING_PASSWORD
 echo
 
