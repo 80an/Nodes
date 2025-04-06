@@ -15,10 +15,10 @@ read -s -p "Enter keyring password: " KEYRING_PASSWORD
 echo
 
 # Запрашиваем, что мы хотим ввести: имя или адрес кошелька
-echo "Choose the way to specify wallet:"
-echo "1) Enter wallet address"
-echo "2) Enter wallet name"
-read -p "Enter your choice (1 or 2): " CHOICE
+echo "Выберете, что вводить:"
+echo "1) Ввести адрес кошелька"
+echo "2) Ввести имя кошелька"
+read -p "Что выбираете? (1 или 2): " CHOICE
 
 if [ "$CHOICE" -eq 1 ]; then
   # Вводим адрес кошелька
@@ -35,6 +35,11 @@ fi
 
 # Получаем адрес валидатора
 VALIDATOR_ADDRESS="$WALLET_ADDRESS"
+
+# Выводим информацию о кошельке и валидаторе
+echo -e "${B_GREEN}Wallet Name: ${NO_COLOR}$WALLET_NAME"
+echo -e "${B_YELLOW}Wallet Address: ${NO_COLOR}$WALLET_ADDRESS"
+echo -e "${B_RED}Validator Address: ${NO_COLOR}$VALIDATOR_ADDRESS"
 
 # Получаем адрес Telegram-бота и Chat ID
 read -p "Enter your Telegram Bot Token: " TELEGRAM_BOT_TOKEN
