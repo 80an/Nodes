@@ -27,14 +27,14 @@ if [ "$CHOICE" -eq 1 ]; then
 elif [ "$CHOICE" -eq 2 ]; then
   # Вводим имя кошелька
   read -p "Ввести имя кошелька: " WALLET_NAME
-  WALLET_ADDRESS=$(printf "%s" "$KEYRING_PASSWORD" | 0gchaind keys show "$WALLET_NAME" --bech addr -a) # Получаем именно адрес кошелька
+  WALLET_ADDRESS=$(printf "%s" "$KEYRING_PASSWORD" | 0gchaind keys show "$WALLET_NAME" --bech val -a)
 else
   echo -e "${B_RED}Invalid choice. Please select 1 or 2.${NO_COLOR}"
   exit 1
 fi
 
 # Получаем адрес валидатора
-VALIDATOR_ADDRESS=$(printf "%s" "$KEYRING_PASSWORD" | 0gchaind keys show "$WALLET_NAME" --bech valoper -a) # Адрес валидатора
+VALIDATOR_ADDRESS="$WALLET_ADDRESS"
 
 # Выводим информацию о кошельке и валидаторе
 echo -e "${B_GREEN}Wallet Name: ${NO_COLOR}$WALLET_NAME"
