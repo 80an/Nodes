@@ -14,10 +14,10 @@ read -s -p "Enter keyring password: " KEYRING_PASSWORD
 echo
 
 # Получаем имя кошелька
-WALLET_NAME=$(echo "$KEYRING_PASSWORD" | 0gchaind keys list --output json | jq -r '.[0].name')
+WALLET_NAME=$(echo '$KEYRING_PASSWORD' | 0gchaind keys list --output json | jq -r '.[0].name')
 
 # Получаем адрес валидатора
-VALIDATOR_ADDRESS=$(echo "$KEYRING_PASSWORD" | 0gchaind keys show "$WALLET_NAME" --bech val -a)
+VALIDATOR_ADDRESS=$(echo '$KEYRING_PASSWORD' | 0gchaind keys show "$WALLET_NAME" --bech val -a)
 
 # Получаем адрес Telegram-бота и Chat ID
 read -p "Enter your Telegram Bot Token: " TELEGRAM_BOT_TOKEN
@@ -70,7 +70,7 @@ check_validator() {
     if [ "$jailed_status" = "true" ]; then
       echo -e "${B_RED}Validator is jailed! Executing unjail command...${NO_COLOR}"
       send_telegram_alert "🚨 Validator is jailed! Attempting unjail..."
-      echo "$KEYRING_PASSWORD" | 0gchaind tx slashing unjail \
+      echo '$KEYRING_PASSWORD' | 0gchaind tx slashing unjail \
         --from "$WALLET_NAME" \
         --chain-id zgtendermint_16600-2 \
         --gas-adjustment 1.7 \
