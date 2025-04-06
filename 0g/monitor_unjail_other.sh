@@ -53,51 +53,60 @@ send_telegram_alert() {
        -d text="$message"
 }
 
-# Функция получения высоты из RPC
+# Функция получения высоты блоков из RPC
 get_rpc_height() {
   response=$(curl -s https://og-t-rpc.noders.services/status)
-  height=$(echo "$response" | jq -r '.result.sync_info.latest_block_height' 2>/dev/null)
+  rpc_height=$(echo "$response" | jq -r '.result.sync_info.latest_block_height')
 
-  if [[ "$height" =~ ^[0-9]+$ ]]; then
-    echo "$height"
+  if [[ "$rpc_height" =~ ^[0-9]+$ ]]; then
+    echo "$rpc_height"
   else
-    echo "0"
+    echo -e "${B_RED}⚠️ Error: Invalid RPC height data. Retrying...${NO_COLOR}"
+    return 1
+  fi
+}
+
+# Функция получения высоты блоков с ноды
+get_node_height() {
+  RPC_PORT=$(grep -m 1 -oP '^laddr = "\K[^"]+' "$HOME/$PROJECT_DIR/config/config.toml" | cut -d ':' -f 3)
+  node_height=$(curl -s localhost:$RPC_PORT/status | jq -r '.result.sync_info.latest_block_height')
+
+  if [[ "$node_height" =~ ^[0-9]+$ ]]; then
+    echo "$node_height"
+  else
+    echo -e "${B_RED}⚠️ Error: Invalid Node height data. Retrying...${NO_COLOR}"
+    return 1
   fi
 }
 
 # Функция проверки высоты блоков и перезапуска ноды при отставании
 check_blocks() {
-  RPC_PORT=$(grep -m 1 -oP '^laddr = "\K[^"]+' "$HOME/$PROJECT_DIR/config/config.toml" | cut -d ':' -f 3)
-
-  # Проверка высоты блоков
   while true; do
-    current_height=$(get_rpc_height)
+    # Получаем высоту блоков ноды и RPC
+    NODE_HEIGHT=$(get_node_height)
+    RPC_HEIGHT=$(get_rpc_height)
 
-    # Проверяем, что переменная current_height содержит целое число
-    if [[ "$current_height" =~ ^[0-9]+$ ]]; then
-      echo -e "Node Height: ${B_GREEN}$current_height${NO_COLOR}"
-
-      # Если высота блоков больше или равна нужной (например, 10000)
-      if [ "$current_height" -lt 10000 ]; then
-        send_telegram_alert "🚨 Высота блоков меньше минимального порога: $current_height"
+    if [[ "$NODE_HEIGHT" =~ ^[0-9]+$ ]] && [[ "$RPC_HEIGHT" =~ ^[0-9]+$ ]]; then
+      # Вычисляем разницу между высотами блоков
+      BLOCKS_LEFT=$((RPC_HEIGHT - NODE_HEIGHT))
+      if [ "$BLOCKS_LEFT" -lt 0 ]; then
+        BLOCKS_LEFT=0
       fi
 
-      # Получаем текущую высоту блоков ноды
-      NODE_HEIGHT=$(curl -s localhost:$RPC_PORT/status | jq -r '.result.sync_info.latest_block_height')
-      BLOCKS_LEFT=$((current_height - NODE_HEIGHT))
+      echo -e "Node Height: ${B_GREEN}$NODE_HEIGHT${NO_COLOR} | RPC Height: ${B_YELLOW}$RPC_HEIGHT${NO_COLOR} | Blocks Left: ${B_RED}$BLOCKS_LEFT${NO_COLOR}"
 
-      # Если разница между высотами больше 5 блоков, перезапускаем ноду
+      # Если разница больше 5 блоков, перезапускаем ноду
       if [ "$BLOCKS_LEFT" -gt 5 ]; then
-        echo -e "${B_RED}Отставание более чем на 5 блоков. Перезапуск ноды...${NO_COLOR}"
+        echo -e "${B_RED}Difference greater than 5. Restarting node...${NO_COLOR}"
         sudo systemctl restart ogd
         # Ждём 30 секунд после перезапуска, чтобы нода успела восстановиться
         sleep 30
       fi
     else
-      send_telegram_alert "🚨 Проблемы с RPC: Высота блоков не доступна."
+      echo -e "${B_RED}⚠️ Invalid height data. Retrying...${NO_COLOR}"
     fi
 
-    sleep 60  # Интервал для проверки
+    sleep 5
   done
 }
 
