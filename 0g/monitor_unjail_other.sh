@@ -22,11 +22,11 @@ read -p "Что выбираете? (1 или 2): " CHOICE
 
 if [ "$CHOICE" -eq 1 ]; then
   # Вводим адрес кошелька
-  read -p "Enter wallet address: " WALLET_ADDRESS
-  WALLET_NAME=$(printf "%s" "$KEYRING_PASSWORD" | 0gchaind keys show "$WALLET_ADDRESS" --bech val -a)
+  read -p "Ввести адрес кошелька: " WALLET_ADDRESS
+  WALLET_NAME=$(printf "%s" "$KEYRING_PASSWORD" | 0gchaind keys show "$WALLET_ADDRESS" --output json | jq -r '.name') # Получаем имя кошелька
 elif [ "$CHOICE" -eq 2 ]; then
   # Вводим имя кошелька
-  read -p "Enter wallet name: " WALLET_NAME
+  read -p "Ввести имя кошелька: " WALLET_NAME
   WALLET_ADDRESS=$(printf "%s" "$KEYRING_PASSWORD" | 0gchaind keys show "$WALLET_NAME" --bech val -a)
 else
   echo -e "${B_RED}Invalid choice. Please select 1 or 2.${NO_COLOR}"
