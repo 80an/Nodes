@@ -53,17 +53,8 @@ send_telegram_alert() {
        -d text="$message"
 }
 
-# Функция проверки высоты блоков и перезапуска ноды при отставании
-check_blocks() {
-  RPC_PORT=$(grep -m 1 -oP '^laddr = "\K[^"]+' "$HOME/$PROJECT_DIR/config/config.toml" | cut -d ':' -f 3)
-
-  # Список RPC
-  RPC_URLS=("https://rpc.0g.noders.services" "https://0g-rpc.stavr.tech")
-  CURRENT_RPC=""
-}
-  
-  # Функция получения высоты из первого доступного RPC
-  get_rpc_height() {
+# Функция получения высоты из первого доступного RPC
+get_rpc_height() {
   local now_ts=$(date +%s)
   local error_rpc_ts_file="/tmp/rpc_error_timestamp"
 
@@ -100,6 +91,24 @@ check_blocks() {
   fi
 
   return 1
+}
+
+# Функция проверки высоты блоков и перезапуска ноды при отставании
+check_blocks() {
+  RPC_PORT=$(grep -m 1 -oP '^laddr = "\K[^"]+' "$HOME/$PROJECT_DIR/config/config.toml" | cut -d ':' -f 3)
+
+  # Список RPC
+  RPC_URLS=("https://rpc.0g.noders.services" "https://0g-rpc.stavr.tech")
+  CURRENT_RPC=""
+
+  # Проверка и сравнение высоты блоков
+  while true; do
+    current_height=$(get_rpc_height)
+    if [ "$current_height" -eq 0 ]; then
+      send_telegram_alert "🚨 Проблемы с RPC: Высота блоков не доступна."
+    fi
+    sleep 60  # Интервал для проверки
+  done
 }
 
 # Функция проверки статуса валидатора и автоматического unjail
