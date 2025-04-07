@@ -126,6 +126,45 @@ check_validator() {
   done
 }
 
+# Функция проверки дискового пространства
+check_disk_space() {
+  while true; do
+    disk_usage=$(df -h / | awk 'NR==2 {print $5}' | tr -d '%')
+
+    if [ "$disk_usage" -ge 100 ]; then
+      send_telegram_alert "❌ ДИСК ЗАПОЛНЕН НА 100%! Требуется немедленное вмешательство!"
+    elif [ "$disk_usage" -ge 98 ]; then
+      send_telegram_alert "🚨 Диск почти заполнен: ${disk_usage}%! Проверьте, освободите место."
+    elif [ "$disk_usage" -ge 96 ]; then
+      send_telegram_alert "⚠️ Предупреждение: диск заполнен на ${disk_usage}%."
+    fi
+
+    sleep 300  # Проверка каждые 5 минут
+  done
+}
+
+# Функция проверки оперативной памяти
+check_memory() {
+  while true; do
+    mem_total=$(grep MemTotal /proc/meminfo | awk '{print $2}')
+    mem_available=$(grep MemAvailable /proc/meminfo | awk '{print $2}')
+    mem_used=$((mem_total - mem_available))
+    mem_usage_percent=$((mem_used * 100 / mem_total))
+
+    if [ "$mem_usage_percent" -ge 99 ]; then
+      send_telegram_alert "❌ ОЗУ почти полностью занята (${mem_usage_percent}%). Нужна немедленная проверка!"
+    elif [ "$mem_usage_percent" -ge 95 ]; then
+      send_telegram_alert "🚨 Высокое потребление памяти: ${mem_usage_percent}%. Рассмотрите возможность оптимизации."
+    elif [ "$mem_usage_percent" -ge 85 ]; then
+      send_telegram_alert "⚠️ Использование памяти превышает 85% (${mem_usage_percent}%)."
+    fi
+
+    sleep 300  # Проверка каждые 5 минут
+  done
+}
+
 check_blocks & 
 check_validator & 
+check_disk_space & 
+check_memory &
 wait
