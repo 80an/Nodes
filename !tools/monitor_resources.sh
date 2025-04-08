@@ -7,7 +7,7 @@ B_RED="\e[31m"
 NO_COLOR="\e[0m"
 
 MONITOR_PID_FILE="/tmp/monitor_pid"
-ENV_FILE="$HOME/.0g_monitor_env"
+ENV_FILE="$HOME/.monitor_env"
 
 # Загрузка .env, если существует
 if [ -f "$ENV_FILE" ]; then
