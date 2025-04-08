@@ -26,13 +26,11 @@ setup_telegram() {
 
 # Отправка сообщений в Telegram
 send_telegram_alert() {
-  if [ -n "$TELEGRAM_BOT_TOKEN" ] && [ -n "$TELEGRAM_CHAT_ID" ]; then
-    local message="$1"
-    curl -s -X POST "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendMessage" \
-      -d chat_id="$TELEGRAM_CHAT_ID" \
-      -d parse_mode="HTML" \
-      --data-urlencode text="$message" > /dev/null
-  fi
+  local message="$1"
+  curl -s -X POST "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendMessage" \
+    -d chat_id="$TELEGRAM_CHAT_ID" \
+    -d parse_mode="HTML" \
+    -d text="$message" > /dev/null
 }
 
 # Получение информации о системе
@@ -44,19 +42,32 @@ get_system_info() {
 
 # Запуск мониторинга
 start_monitoring() {
-  if [ -f "$MONITOR_PID_FILE" ] && kill -0 $(cat "$MONITOR_PID_FILE") 2>/dev/null; then
-    echo -e "${B_YELLOW}⚠️ Мониторинг уже запущен с PID $(cat $MONITOR_PID_FILE)${NO_COLOR}"
+  if [ -f "$MONITOR_PID_FILE" ] && kill -0 "$(cat "$MONITOR_PID_FILE")" 2>/dev/null; then
+    echo -e "${B_YELLOW}⚠️ Мониторинг уже запущен (PID $(cat $MONITOR_PID_FILE))${NO_COLOR}"
     return
   fi
 
   echo -e "${B_GREEN}▶️ Запуск мониторинга...${NO_COLOR}"
   bash -c "source <(wget -qO- 'https://raw.githubusercontent.com/80an/Nodes/refs/heads/main/0g/only_monitoring.sh')" &
   MONITOR_PID=$!
-  echo $MONITOR_PID > "$MONITOR_PID_FILE"
+  echo "$MONITOR_PID" > "$MONITOR_PID_FILE"
   echo -e "${B_GREEN}✅ Мониторинг запущен с PID $MONITOR_PID${NO_COLOR}"
 
-  local sys_info=$(get_system_info)
-  local message="<b>✅ Мониторинг 0G запущен</b>\n\n🆔 <code>$MONITOR_PID</code>\n\n$sys_info"
+  # Собираем инфо о ресурсах
+  local disk_usage=$(df -h / | awk 'NR==2{print $5}')
+  local mem_info=$(free -h | awk '/Mem:/{print $3 " / " $2}')
+
+  # Формируем сообщение с реальными переводами строк
+  read -r -d '' message <<EOF
+<b>✅ Мониторинг 0G запущен</b>
+
+🆔 <code>$MONITOR_PID</code>
+
+📊 <b>Ресурсы:</b>
+• 💾 Диск: $disk_usage
+• 🧠 RAM: $mem_info
+EOF
+
   send_telegram_alert "$message"
 }
 
