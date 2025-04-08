@@ -71,7 +71,7 @@ EOF
   send_telegram_alert "$message"
 }
 
-# Остановка мониторинга
+# Остановка мониторинга и фоновых процессов
 stop_monitoring() {
   if [ -f "$MONITOR_PID_FILE" ]; then
     MONITOR_PID=$(cat "$MONITOR_PID_FILE")
@@ -80,6 +80,11 @@ stop_monitoring() {
       echo -e "${B_RED}⛔ Мониторинг остановлен (PID $MONITOR_PID)${NO_COLOR}"
       rm -f "$MONITOR_PID_FILE"
       send_telegram_alert "⛔ Мониторинг 0G остановлен (PID $MONITOR_PID)"
+      
+      # Остановка фоновых процессов
+      pkill -f check_disk_space
+      pkill -f check_memory
+      echo -e "${B_RED}⛔ Фоновые процессы (диск и память) остановлены.${NO_COLOR}"
     else
       echo -e "${B_YELLOW}⚠️ Процесс мониторинга не найден. Удаляю PID-файл.${NO_COLOR}"
       rm -f "$MONITOR_PID_FILE"
