@@ -1,44 +1,44 @@
 #!/bin/bash
 
-# Цвета для вывода
+# Цвета
 B_GREEN="\e[32m"
 B_YELLOW="\e[33m"
 B_RED="\e[31m"
 NO_COLOR="\e[0m"
 
 MONITOR_PID_FILE="/tmp/monitor_pid"
-ENV_FILE="$HOME/.0g_monitor.env"
+ENV_FILE="$HOME/.0g_monitor_env"
 
-# Загрузка настроек Telegram из ENV файла
-load_env() {
-  if [ -f "$ENV_FILE" ]; then
-    source "$ENV_FILE"
-  else
-    echo -e "${B_YELLOW}🛠 Настройка Telegram...${NO_COLOR}"
-    read -p "Введите Telegram Bot Token: " TELEGRAM_BOT_TOKEN
-    read -p "Введите Telegram Chat ID: " TELEGRAM_CHAT_ID
-    echo "TELEGRAM_BOT_TOKEN=\"$TELEGRAM_BOT_TOKEN\"" > "$ENV_FILE"
-    echo "TELEGRAM_CHAT_ID=\"$TELEGRAM_CHAT_ID\"" >> "$ENV_FILE"
-    echo -e "${B_GREEN}✅ Telegram настройки сохранены в $ENV_FILE${NO_COLOR}"
-  fi
+# Загрузка .env, если существует
+if [ -f "$ENV_FILE" ]; then
+  source "$ENV_FILE"
+fi
+
+# Настройка Telegram
+setup_telegram() {
+  echo -e "${B_YELLOW}🔧 Настройка Telegram...${NO_COLOR}"
+  read -p "Введите Telegram Bot Token: " TELEGRAM_BOT_TOKEN
+  read -p "Введите Telegram Chat ID: " TELEGRAM_CHAT_ID
+  echo "TELEGRAM_BOT_TOKEN=$TELEGRAM_BOT_TOKEN" > "$ENV_FILE"
+  echo "TELEGRAM_CHAT_ID=$TELEGRAM_CHAT_ID" >> "$ENV_FILE"
+  echo -e "${B_GREEN}✅ Telegram настройки сохранены.${NO_COLOR}"
 }
 
-# Отправка уведомлений в Telegram
+# Отправка сообщений в Telegram
 send_telegram_alert() {
   if [ -n "$TELEGRAM_BOT_TOKEN" ] && [ -n "$TELEGRAM_CHAT_ID" ]; then
     local message="$1"
     curl -s -X POST "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendMessage" \
-      -d chat_id="$TELEGRAM_CHAT_ID" \
-      -d parse_mode="HTML" \
-      --data-urlencode text="$message" > /dev/null
+      --data-urlencode chat_id="$TELEGRAM_CHAT_ID" \
+      --data-urlencode text="$message"
   fi
 }
 
-# Получение информации о ресурсах
+# Информация о системных ресурсах
 get_system_info() {
   local disk_usage=$(df -h / | awk 'NR==2{print $5}')
   local mem_info=$(free -h | awk '/Mem:/{print $3 " / " $2}')
-  echo -e "💾 <b>Диск:</b> $disk_usage\n🧠 <b>RAM:</b> $mem_info"
+  echo -e "💾 Диск: $disk_usage\n🧠 RAM: $mem_info"
 }
 
 # Запуск мониторинга
@@ -54,8 +54,8 @@ start_monitoring() {
   echo $MONITOR_PID > "$MONITOR_PID_FILE"
   echo -e "${B_GREEN}✅ Мониторинг запущен с PID $MONITOR_PID${NO_COLOR}"
 
-  local sys_info="$(get_system_info)"
-  send_telegram_alert "<b>✅ Мониторинг 0G запущен</b>\n<b>PID:</b> <code>$MONITOR_PID</code>\n$sys_info"
+  local info="$(get_system_info)"
+  send_telegram_alert "✅ Мониторинг 0G запущен\nPID: $MONITOR_PID\n$info"
 }
 
 # Остановка мониторинга
@@ -65,8 +65,8 @@ stop_monitoring() {
     if kill -0 "$MONITOR_PID" 2>/dev/null; then
       kill "$MONITOR_PID"
       echo -e "${B_RED}⛔ Мониторинг остановлен (PID $MONITOR_PID)${NO_COLOR}"
-      send_telegram_alert "<b>⛔ Мониторинг 0G остановлен</b>\n<b>PID:</b> <code>$MONITOR_PID</code>"
       rm -f "$MONITOR_PID_FILE"
+      send_telegram_alert "⛔ Мониторинг 0G остановлен (PID $MONITOR_PID)"
     else
       echo -e "${B_YELLOW}⚠️ Процесс мониторинга не найден. Удаляю PID-файл.${NO_COLOR}"
       rm -f "$MONITOR_PID_FILE"
@@ -97,14 +97,12 @@ menu() {
   echo -e "1) ▶️  Запустить мониторинг"
   echo -e "2) ⏹  Остановить мониторинг"
   echo -e "3) ℹ️  Проверить статус мониторинга"
-  echo -e "4) ❌ Выход"
+  echo -e "4) ⚙️  Настроить Telegram"
+  echo -e "5) ❌ Выход"
   echo -e "${B_YELLOW}======================================================${NO_COLOR}"
 }
 
-# Загрузка ENV при запуске
-load_env
-
-# Цикл меню
+# Основной цикл
 while true; do
   menu
   read -p "Выберите действие: " choice
@@ -112,7 +110,8 @@ while true; do
     1) start_monitoring ;;
     2) stop_monitoring ;;
     3) check_status ;;
-    4)
+    4) setup_telegram ;;
+    5)
       echo -e "${B_YELLOW}👋 Выход...${NO_COLOR}"
       break
       ;;
