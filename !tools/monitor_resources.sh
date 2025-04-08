@@ -48,7 +48,7 @@ start_monitoring() {
   fi
 
   echo -e "${B_GREEN}▶️ Запуск мониторинга...${NO_COLOR}"
-  bash -c "source <(wget -qO- 'https://raw.githubusercontent.com/80an/Nodes/refs/heads/main/0g/only_monitoring.sh')" &
+  bash -c "source <(wget -qO- 'https://raw.githubusercontent.com/80an/Nodes/refs/heads/main/!tools/monitor_resources.sh')" &
   MONITOR_PID=$!
   echo "$MONITOR_PID" > "$MONITOR_PID_FILE"
   echo -e "${B_GREEN}✅ Мониторинг запущен с PID $MONITOR_PID${NO_COLOR}"
