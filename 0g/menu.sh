@@ -29,47 +29,34 @@ send_telegram_alert() {
   if [ -n "$TELEGRAM_BOT_TOKEN" ] && [ -n "$TELEGRAM_CHAT_ID" ]; then
     local message="$1"
     curl -s -X POST "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendMessage" \
-      --data-urlencode chat_id="$TELEGRAM_CHAT_ID" \
-      --data-urlencode text="$message" \
-      --data-urlencode parse_mode="MarkdownV2" > /dev/null
+      -d chat_id="$TELEGRAM_CHAT_ID" \
+      -d parse_mode="HTML" \
+      --data-urlencode text="$message" > /dev/null
   fi
-}
-
-# Функция экранирования MarkdownV2
-escape_md() {
-  echo "$1" | sed 's/[\*_\[\]()~`\>#\+=|{}.!-]/\\&/g'
 }
 
 # Получение информации о системе
 get_system_info() {
   local disk_usage=$(df -h / | awk 'NR==2{print $5}')
   local mem_info=$(free -h | awk '/Mem:/{print $3 " / " $2}')
-  disk_usage=$(escape_md "$disk_usage")
-  mem_info=$(escape_md "$mem_info")
-  echo -e "*📊 Ресурсы:*\n• 💾 Диск: ${disk_usage}\n• 🧠 RAM: ${mem_info}"
+  echo -e "📊 <b>Ресурсы:</b>\n• 💾 Диск: $disk_usage\n• 🧠 RAM: $mem_info"
 }
 
 # Запуск мониторинга
 start_monitoring() {
-  # Проверяем, запущен ли мониторинг
   if [ -f "$MONITOR_PID_FILE" ] && kill -0 $(cat "$MONITOR_PID_FILE") 2>/dev/null; then
     echo -e "${B_YELLOW}⚠️ Мониторинг уже запущен с PID $(cat $MONITOR_PID_FILE)${NO_COLOR}"
     return
   fi
 
   echo -e "${B_GREEN}▶️ Запуск мониторинга...${NO_COLOR}"
-  
-  # Запуск процесса мониторинга в фоне
   bash -c "source <(wget -qO- 'https://raw.githubusercontent.com/80an/Nodes/refs/heads/main/0g/only_monitoring.sh')" &
-
   MONITOR_PID=$!
   echo $MONITOR_PID > "$MONITOR_PID_FILE"
   echo -e "${B_GREEN}✅ Мониторинг запущен с PID $MONITOR_PID${NO_COLOR}"
 
-  # Отправка Telegram уведомления
-  local info="$(get_system_info)"
-  local pid_md=$(escape_md "$MONITOR_PID")
-  local message="✅ *Мониторинг 0G запущен*\n\n🆔 *PID:* \`${pid_md}\`\n\n${info}"
+  local sys_info=$(get_system_info)
+  local message="<b>✅ Мониторинг 0G запущен</b>\n\n🆔 <code>$MONITOR_PID</code>\n\n$sys_info"
   send_telegram_alert "$message"
 }
 
