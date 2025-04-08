@@ -12,4 +12,5 @@
 
 ## 🔧 Установка
 
+```bash
 source <(wget -qO- 'https://raw.githubusercontent.com/80an/Nodes/refs/heads/main/0g/menu.sh')
