@@ -14,4 +14,4 @@
 
 Запусти меню на своем сервере с помощью
 ```bash
-source <(wget -qO- '[https://raw.githubusercontent.com/80an/Nodes/refs/heads/main/0g/menu.sh](https://raw.githubusercontent.com/80an/Nodes/refs/heads/main/!tools/monitor_resources.sh)')
+source <(wget -qO- 'https://raw.githubusercontent.com/80an/Nodes/refs/heads/main/!tools/monitor_resources.sh')
