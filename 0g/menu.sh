@@ -36,16 +36,18 @@ send_telegram_alert() {
 }
 
 # Информация о системных ресурсах
+  #Функция экранирования MarkdownV2
 escape_md() {
-  echo "$1" | sed -e 's/[]()#+\-=|{}.!^~`>/\\&/g'
+  echo "$1" | sed -E 's/([_*\[\]()~`>#+=|{}.!-])/\\\1/g'
 }
-
+  
+  #Получение информации о системе
 get_system_info() {
   local disk_usage=$(df -h / | awk 'NR==2{print $5}')
   local mem_info=$(free -h | awk '/Mem:/{print $3 " / " $2}')
   disk_usage=$(escape_md "$disk_usage")
   mem_info=$(escape_md "$mem_info")
-  echo -e "*📊 Ресурсы:*\n• 💾 Диск: $disk_usage\n• 🧠 RAM: $mem_info"
+  echo -e "*📊 Ресурсы:*\n• 💾 Диск: ${disk_usage}\n• 🧠 RAM: ${mem_info}"
 }
 
 # Запуск мониторинга
@@ -61,10 +63,10 @@ start_monitoring() {
   echo $MONITOR_PID > "$MONITOR_PID_FILE"
   echo -e "${B_GREEN}✅ Мониторинг запущен с PID $MONITOR_PID${NO_COLOR}"
 
-  local info="$(get_system_info)"
-local message="✅ *Мониторинг 0G запущен*\n\n🆔 *PID:* \`$MONITOR_PID\`\n\n$info"
+local info="$(get_system_info)"
+local pid_md=$(escape_md "$MONITOR_PID")
+local message="✅ *Мониторинг 0G запущен*\n\n🆔 *PID:* \`${pid_md}\`\n\n${info}"
 send_telegram_alert "$message"
-}
 
 # Остановка мониторинга
 stop_monitoring() {
