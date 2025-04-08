@@ -38,7 +38,7 @@ send_telegram_alert() {
 get_system_info() {
   local disk_usage=$(df -h / | awk 'NR==2{print $5}')
   local mem_info=$(free -h | awk '/Mem:/{print $3 " / " $2}')
-  echo -e "💾 Диск: $disk_usage\n🧠 RAM: $mem_info"
+  echo -e "📊 Ресурсы:\n• 💾 Диск: $disk_usage\n• 🧠 RAM: $mem_info"
 }
 
 # Запуск мониторинга
@@ -55,7 +55,8 @@ start_monitoring() {
   echo -e "${B_GREEN}✅ Мониторинг запущен с PID $MONITOR_PID${NO_COLOR}"
 
   local info="$(get_system_info)"
-  send_telegram_alert "✅ Мониторинг 0G запущен\nPID: $MONITOR_PID\n$info"
+local message="✅ Мониторинг 0G запущен\n\n🆔 PID: $MONITOR_PID\n\n$info"
+send_telegram_alert "$message"
 }
 
 # Остановка мониторинга
