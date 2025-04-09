@@ -193,13 +193,31 @@ while true; do
         -y
       ;;
     6)
-      echo "✅ Мониторинг валидатора запущен."
-      if [[ -n "$TELEGRAM_BOT_TOKEN" && -n "$TELEGRAM_CHAT_ID" ]]; then
-        nohup bash "$HOME/only_monitoring.sh" > /dev/null 2>&1 &
-      else
-        echo "Мониторинг не был включен, так как не введены данные Telegram."
-      fi
-      ;;
+      echo "✅ Запуск мониторинга валидатора..."
+
+  if [[ -z "$TELEGRAM_BOT_TOKEN" || -z "$TELEGRAM_CHAT_ID" ]]; then
+    echo -e "${B_YELLOW}⚠️ Telegram Token и Chat ID не заданы.${NO_COLOR}"
+    read -p "Введите Telegram Bot Token: " TELEGRAM_BOT_TOKEN
+    read -p "Введите Telegram Chat ID: " TELEGRAM_CHAT_ID
+    save_env  # Сохраняем новые данные в .env
+  else
+    echo "Текущий Telegram Bot Token: $TELEGRAM_BOT_TOKEN"
+    echo "Текущий Telegram Chat ID: $TELEGRAM_CHAT_ID"
+    read -p "❓ Хотите изменить эти данные? (y/N): " change_choice
+    if [[ "$change_choice" =~ ^[Yy]$ ]]; then
+      read -p "Введите новый Telegram Bot Token: " TELEGRAM_BOT_TOKEN
+      read -p "Введите новый Telegram Chat ID: " TELEGRAM_CHAT_ID
+      save_env
+    fi
+  fi
+
+  if [[ -n "$TELEGRAM_BOT_TOKEN" && -n "$TELEGRAM_CHAT_ID" ]]; then
+    nohup bash "$HOME/only_monitoring.sh" > /dev/null 2>&1 &
+    echo "📡 Мониторинг запущен в фоне."
+  else
+    echo -e "${B_RED}❌ Мониторинг не был запущен. Telegram данные не указаны.${NO_COLOR}"
+  fi
+  ;;
     7)
       echo "⛔ Остановка мониторинга валидатора..."
       pkill -f only_monitoring.sh
