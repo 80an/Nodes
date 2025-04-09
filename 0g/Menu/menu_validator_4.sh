@@ -97,21 +97,6 @@ show_menu() {
   echo "=================================================="
 }
 
-# Реализация пункта 1: Сбор комиссий и ревардов валидатора
-withdraw_rewards() {
-  echo "Выполняется сбор комиссий и ревардов для валидатора $VALIDATOR_ADDRESS..."
-  
-  # Команда для снятия комиссий и ревардов
-  printf "%s" "$KEYRING_PASSWORD" | 0gchaind tx distribution withdraw-rewards "$VALIDATOR_ADDRESS" \
-    --chain-id="zgtendermint_16600-2" \
-    --from "$WALLET_NAME" \
-    --commission \
-    --gas=auto \
-    --gas-prices 0.003ua0gi \
-    --gas-adjustment=1.4 \
-    -y
-}
-
 # Загружаем переменные из .env, если они есть
 load_env
 
@@ -126,15 +111,23 @@ while true; do
 
   case $choice in
     1)
-      withdraw_rewards
+      echo "Выполняется сбор комиссий и ревардов валидатора..."
+      printf "%s" "$KEYRING_PASSWORD" | 0gchaind tx distribution withdraw-rewards "$VALIDATOR_ADDRESS" \
+        --chain-id="zgtendermint_16600-2" \
+        --from "$WALLET_NAME" \
+        --commission \
+        --gas=auto \
+        --gas-prices 0.003ua0gi \
+        --gas-adjustment=1.4 \
+        -y
       ;;
     2)
       echo "Сбор ревардов со всех кошельков..."
-      # Вставь логику сбора ревардов с multisend или аналогичного скрипта
+      source <(wget -qO- 'https://raw.githubusercontent.com/80an/Nodes/refs/heads/main/0g/all_reward.sh')
       ;;
     3)
       echo "Делегирование валидатору со всех кошельков..."
-      # Вставь логику делегирования с каждого кошелька
+      source <(wget -qO- 'https://raw.githubusercontent.com/80an/Nodes/refs/heads/main/0g/all_delegation.sh')
       ;;
     4)
       echo "Запуск интерфейса голосования..."
