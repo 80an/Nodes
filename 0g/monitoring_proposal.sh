@@ -4,11 +4,12 @@ ENV_FILE="$HOME/.0g_monitor_env"
 PROPOSAL_CACHE="$HOME/.0g_known_proposals"
 REMINDER_LOG="$HOME/.0g_proposal_reminders"
 
-# Загрузка .env
+# Загрузка переменных окружения
+ENV_FILE="$HOME/.validator_env"
 if [ -f "$ENV_FILE" ]; then
   source "$ENV_FILE"
 else
-  echo "❌ Не найден файл настроек $ENV_FILE"
+  echo "❌ Не найден файл переменных $ENV_FILE"
   exit 1
 fi
 
