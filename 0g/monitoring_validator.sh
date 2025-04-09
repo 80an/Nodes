@@ -9,11 +9,12 @@ NO_COLOR="\e[0m"
 ENV_FILE="$HOME/.0g_monitor_env"
 RANK_FILE="$HOME/.0g_validator_rank"
 
-# Загрузка .env
+# Загрузка переменных окружения
+ENV_FILE="$HOME/.validator_env"
 if [ -f "$ENV_FILE" ]; then
   source "$ENV_FILE"
 else
-  echo -e "${B_RED}⛔ Не найден файл настроек $ENV_FILE${NO_COLOR}"
+  echo "❌ Не найден файл переменных $ENV_FILE"
   exit 1
 fi
 
