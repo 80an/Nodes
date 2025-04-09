@@ -131,7 +131,56 @@ while true; do
       ;;
     4)
       echo "Запуск интерфейса голосования..."
-      # Команда или вызов скрипта голосования
+      echo "📮 Поиск активных пропозалов для голосования..."
+
+  # Получаем список активных пропозалов
+  proposals=$(0gchaind q gov proposals --status voting_period --output json)
+
+  proposal_count=$(echo "$proposals" | jq '.proposals | length')
+
+  if [ "$proposal_count" -eq 0 ]; then
+    echo "❌ Нет активных пропозалов для голосования."
+    return 1
+  fi
+
+  echo "📋 Список активных пропозалов:"
+  for ((i=0; i<proposal_count; i++)); do
+    id=$(echo "$proposals" | jq -r ".proposals[$i].id")
+    title=$(echo "$proposals" | jq -r ".proposals[$i].content.title")
+    echo "  $id) $title"
+  done
+
+  read -p "Введите номер пропозала для голосования: " PROPOSAL_ID
+
+  echo "Выберите тип голоса:"
+  echo "1) ✅ За"
+  echo "2) ❌ Против"
+  echo "3) ⛔ Против с вето"
+  echo "4) ⚪ Воздержаться"
+  read -p "Ваш выбор (1/2/3/4): " VOTE_CHOICE
+
+  case $VOTE_CHOICE in
+    1) VOTE_OPTION="yes" ;;
+    2) VOTE_OPTION="no" ;;
+    3) VOTE_OPTION="no_with_veto" ;;
+    4) VOTE_OPTION="abstain" ;;
+    *)
+      echo "❌ Неверный выбор!"
+      return 1
+      ;;
+  esac
+
+  echo "📤 Отправка голоса '$VOTE_OPTION' по пропозалу #$PROPOSAL_ID..."
+
+  printf "%s" "$KEYRING_PASSWORD" | 0gchaind tx gov vote "$PROPOSAL_ID" "$VOTE_OPTION" \
+    --from "$WALLET_NAME" \
+    --chain-id="zgtendermint_16600-2" \
+    --gas=auto \
+    --gas-prices=0.003ua0gi \
+    --gas-adjustment=1.4 \
+    -y
+
+  echo "✅ Голосование отправлено."
       ;;
     5)
       echo "Выполняется выход из тюрьмы (unjail)..."
