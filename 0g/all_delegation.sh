@@ -24,7 +24,7 @@ wallet_names=$(printf "%s" "$KEYRING_PASSWORD" | 0gchaind keys list | grep "name
 for wallet_name in $wallet_names
 do
     balance_info=$(printf "%s" "$KEYRING_PASSWORD" | 0gchaind q bank balances $(0gchaind keys show "$wallet_name" -a))
-    amount=$(echo "$balance_info" | grep -B 1 "ua0gi" | grep "amount" | awk '{print $3}' | tr -d '"')
+    amount=$(echo "$balance_info" | grep -B 1 "ua0gi" | grep "amount" | awk '{print $2}' | tr -d '"')
 
     if [ -n "$amount" ] && [ "$amount" -ge 100 ] 2>/dev/null; then
         echo "🪙 Кошелек: $wallet_name, Баланс: ${amount} ua0gi"
@@ -34,6 +34,12 @@ do
           --gas-prices 0.003ua0gi \
           --gas-adjustment=1.4 \
           -y
-        sleep $((RANDOM % 81 + 20))
+
+        # Пауза от 20 до 100 секунд
+        delay=$((RANDOM % 81 + 20))
+        echo "⏳ Пауза $delay секунд перед следующим кошельком..."
+        sleep "$delay"
     fi
 done
+
+echo "✅ Все делегации успешно выполнены."
