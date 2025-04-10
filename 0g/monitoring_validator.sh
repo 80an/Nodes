@@ -60,30 +60,34 @@ while true; do
   rank_info=""
   changed=0  # флаг изменений
 
-  if [ "$found" -eq 1 ]; then
-    rank_info="🔢 Место в активном сете: #$rank"
-    if [ -f "$RANK_FILE" ]; then
-      prev_rank=$(cat "$RANK_FILE")
-      if [ "$rank" -ne "$prev_rank" ]; then
-        changed=1
-        if [ "$rank" -lt "$prev_rank" ]; then
-          send_telegram_alert "📈 Валидатор поднялся: с #$prev_rank на #$rank"
-        else
-          send_telegram_alert "📉 Валидатор опустился: с #$prev_rank на #$rank"
-        fi
+ if [ "$found" -eq 1 ]; then
+  echo "Валидатор найден. Ранг: $rank"
+  rank_info="🔢 Место в активном сете: #$rank"
+  if [ -f "$RANK_FILE" ]; then
+    prev_rank=$(cat "$RANK_FILE")
+    echo "Предыдущий ранг: $prev_rank"  # Добавьте вывод для отладки
+    if [ "$rank" -ne "$prev_rank" ]; then
+      changed=1
+      echo "Ранг изменился, обновляем файл"  # Отладка изменения ранга
+      if [ "$rank" -lt "$prev_rank" ]; then
+        send_telegram_alert "📈 Валидатор поднялся: с #$prev_rank на #$rank"
+      else
+        send_telegram_alert "📉 Валидатор опустился: с #$prev_rank на #$rank"
       fi
-    else
-      changed=1
     fi
-    echo "$rank" > "$RANK_FILE"
   else
-    rank_info="⚠️ Валидатор не в активном сете"
-    if [ -f "$RANK_FILE" ]; then
-      changed=1
-      send_telegram_alert "⚠️ Валидатор выбыл из активного сета!"
-      rm "$RANK_FILE"
-    fi
+    changed=1
+    echo "Создаем новый файл для ранга"  # Добавьте эту строку для отладки
   fi
+  echo "$rank" > "$RANK_FILE"
+else
+  rank_info="⚠️ Валидатор не в активном сете"
+  if [ -f "$RANK_FILE" ]; then
+    changed=1
+    send_telegram_alert "⚠️ Валидатор выбыл из активного сета!"
+    rm "$RANK_FILE"
+  fi
+fi
 
   # Отладка, что условие для отправки сообщения выполняется
   echo "Изменился ли статус или jail: $changed, jailed: $jailed"
