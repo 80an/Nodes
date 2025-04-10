@@ -35,7 +35,7 @@ while true; do
   echo "Запуск цикла мониторинга..."  # Отладка начала цикла
 
   # Получение jailed статуса
-  jailed=$(0gchaind q staking validator "$VALIDATOR_ADDRESS" --output json | jq -r .jailed)
+  jailed=$(0gchaind q staking validator "$VALIDATOR_ADDRESS" --output json | jq -r '.jailed')
   echo "Jailed статус: $jailed"  # Отладка получения jailed статуса
 
   # Получение пропущенных блоков
