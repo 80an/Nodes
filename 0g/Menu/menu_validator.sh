@@ -24,7 +24,7 @@ else
   echo
 
   # Ввод данных пользователя для настройки
-  read -s -p "${B_BLUE}Введите пароль для Keyring: ${NO_COLOR}" KEYRING_PASSWORD
+  read -s -p "Введите пароль для Keyring: " KEYRING_PASSWORD
   echo
   echo -e "${B_CYAN}Выберите, что вводить:${NO_COLOR}"
   echo "1) ${B_GREEN}Имя кошелька${NO_COLOR}"
