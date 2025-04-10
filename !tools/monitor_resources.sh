@@ -48,7 +48,8 @@ start_monitoring() {
   fi
 
   echo -e "${B_GREEN}▶️ Запуск мониторинга...${NO_COLOR}"
-  bash -c "source <(wget -qO- 'https://raw.githubusercontent.com/80an/Nodes/refs/heads/main/!tools/monitor_resources.sh')" &
+  #bash -c "source <(wget -qO- 'https://raw.githubusercontent.com/80an/Nodes/refs/heads/main/!tools/monitor_resources.sh')" &
+  nohup bash -c "source <(wget -qO- 'https://raw.githubusercontent.com/80an/Nodes/refs/heads/main/!tools/monitor_resources.sh')" &> /dev/null &
   MONITOR_PID=$!
   echo "$MONITOR_PID" > "$MONITOR_PID_FILE"
   echo -e "${B_GREEN}✅ Мониторинг запущен с PID $MONITOR_PID${NO_COLOR}"
@@ -175,5 +176,7 @@ check_memory() {
 }
 
 # Запуск функций в фоновом режиме
-check_disk_space &
-check_memory &
+#check_disk_space &
+#check_memory &
+nohup bash -c 'check_disk_space' &> /dev/null &
+nohup bash -c 'check_memory' &> /dev/null &
