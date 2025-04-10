@@ -27,9 +27,9 @@ else
   read -s -p "Введите пароль для Keyring: " KEYRING_PASSWORD
   echo
   echo -e "${B_CYAN}Выберите, что вводить:${NO_COLOR}"
-  echo "1) ${B_GREEN}Имя кошелька${NO_COLOR}"
-  echo "2) ${B_GREEN}Адрес кошелька${NO_COLOR}"
-  read -p "${B_MAGENTA}Что выбираете? (1 или 2): ${NO_COLOR}" choice
+  echo "1) ${B_GREEN} Имя кошелька${NO_COLOR}"
+  echo "2) ${B_GREEN} Адрес кошелька${NO_COLOR}"
+  read -p "${B_MAGENTA} Что выбираете? (1 или 2): ${NO_COLOR}" choice
 
   if [ "$choice" -eq 1 ]; then
     # Вводим имя кошелька
