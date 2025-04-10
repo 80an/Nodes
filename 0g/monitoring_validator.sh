@@ -43,9 +43,10 @@ while true; do
   echo "Пропущено блоков: $missed"  # Отладка получения missed блоков
 
   # Получаем список активных валидаторов
-  active_validators=$(0gchaind q staking validators --output json --limit 3000 | jq -r '.validators[] | select(.status=="BOND_STATUS_BONDED") | .operator_address')
+  # active_validators=$(0gchaind q staking validators --output json --limit 200 | jq -r '.validators[] | select(.status=="BOND_STATUS_BONDED") | .operator_address')
+  active_validators=$(0gchaind q staking validators --limit 200 --output json | jq -r '.validators[].operator_address') | select(.status=="BOND_STATUS_BONDED") 
   echo "Активные валидаторы: $active_validators"  # Отладка списка валидаторов
-
+0gchaind q staking validators --output json | jq -r '.validators[] | select(.status=="BOND_STATUS_BONDED")
   rank=1
   found=0
 
