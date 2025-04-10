@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Файл для хранения переменных окружения
-ENV_FILE="$HOME/.env"
+ENV_FILE="$HOME/.validator_env"
 BASHRC_FILE="$HOME/.bashrc"
 
 
