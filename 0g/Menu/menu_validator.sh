@@ -51,6 +51,9 @@ setup_validator() {
   KEYRING_PASSWORD=$(pass validator/keyring_password)
 fi
 
+# Загружаем переменные из .env, если файл существует
+  load_env
+
 # Запрашиваем, что мы хотим ввести: имя или адрес кошелька
   if [ -z "$WALLET_NAME" ] || [ -z "$WALLET_ADDRESS" ]; then
     echo "Выберите, что вводить:"
