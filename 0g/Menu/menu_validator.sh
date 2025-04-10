@@ -24,12 +24,12 @@ else
   echo
 
   # Ввод данных пользователя для настройки
-  read -s -p "Введите пароль для Keyring: " KEYRING_PASSWORD
+  read -s -p "${B_BLUE}Введите пароль для Keyring: ${NO_COLOR}" KEYRING_PASSWORD
   echo
   echo -e "${B_CYAN}Выберите, что вводить:${NO_COLOR}"
-  echo "1) ${B_GREEN} Имя кошелька${NO_COLOR}"
-  echo "2) ${B_GREEN} Адрес кошелька${NO_COLOR}"
-  read -p "${B_MAGENTA} Что выбираете? (1 или 2): ${NO_COLOR}" choice
+  echo -e "${B_GREEN}1) Имя кошелька${NO_COLOR}"
+  echo -e "${B_GREEN}2) Адрес кошелька${NO_COLOR}"
+  read -p "${B_MAGENTA}Что выбираете? (1 или 2): ${NO_COLOR}" choice
 
   if [ "$choice" -eq 1 ]; then
     # Вводим имя кошелька
@@ -137,16 +137,15 @@ while true; do
       # Здесь добавьте код для включения мониторинга
       ;;
     7)
-      echo -e "${B_YELLOW}Отключаем мониторинг валидатора...${NO_COLOR}"
+      echo -e "${B_RED}Отключаем мониторинг валидатора...${NO_COLOR}"
       # Здесь добавьте код для отключения мониторинга
       ;;
     8)
       echo -e "${B_BLUE}Выход из программы...${NO_COLOR}"
-      break  # Это заменяет exit 0 и не завершает сессию
+      exit 0
       ;;
     *)
       echo -e "${B_RED}Неверный выбор, пожалуйста, выберите пункт от 1 до 8.${NO_COLOR}"
       ;;
   esac
 done
-
