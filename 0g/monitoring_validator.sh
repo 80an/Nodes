@@ -38,7 +38,7 @@ while true; do
   jailed=$(0gchaind q staking validator "$VALIDATOR_ADDRESS" --output json | jq -r .jailed)
   echo "Jailed статус: $jailed"  # Отладка получения jailed статуса
 
-  # Получение подписи блоков
+  # Получение пропущенных блоков
   missed=$(0gchaind q slashing signing-info $(0gchaind tendermint show-validator) --output json | jq -r .missed_blocks_counter)
   echo "Пропущено блоков: $missed"  # Отладка получения missed блоков
 
@@ -84,6 +84,9 @@ while true; do
       rm "$RANK_FILE"
     fi
   fi
+
+  # Отладка, что условие для отправки сообщения выполняется
+  echo "Изменился ли статус или jail: $changed, jailed: $jailed"
 
   # Отправка основного статуса, только если были изменения или jail
   if [ "$changed" -eq 1 ] || [ "$jailed" = "true" ]; then
