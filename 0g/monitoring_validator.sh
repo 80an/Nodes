@@ -20,23 +20,31 @@ fi
 # Отправка сообщений в Telegram
 send_telegram_alert() {
   local message="$1"
+  echo "Отправка сообщения в Telegram: $message"  # Добавлено для отладки
   curl -s -X POST "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendMessage" \
     -d chat_id="$TELEGRAM_CHAT_ID" \
     -d parse_mode="HTML" \
     -d text="$message" > /dev/null
 }
 
+# Тестовое сообщение, чтобы проверить, что Telegram API работает
+send_telegram_alert "Тестовое сообщение от скрипта. Проверка связи."
+
 # Бесконечный цикл
 while true; do
+  echo "Запуск цикла мониторинга..."  # Отладка начала цикла
 
   # Получение jailed статуса
   jailed=$(0gchaind q staking validator "$VALIDATOR_ADDRESS" --output json | jq -r .jailed)
+  echo "Jailed статус: $jailed"  # Отладка получения jailed статуса
 
   # Получение подписи блоков
   missed=$(0gchaind q slashing signing-info $(0gchaind tendermint show-validator) --output json | jq -r .missed_blocks_counter)
+  echo "Пропущено блоков: $missed"  # Отладка получения missed блоков
 
   # Получаем список активных валидаторов
   active_validators=$(0gchaind q staking validators --output json --limit 3000 | jq -r '.validators[] | select(.status=="BOND_STATUS_BONDED") | .operator_address')
+  echo "Активные валидаторы: $active_validators"  # Отладка списка валидаторов
 
   rank=1
   found=0
@@ -50,28 +58,10 @@ while true; do
   done <<< "$active_validators"
 
   rank_info=""
-
-  if [ "$found" -eq 1 ]; then
-    rank_info="🔢 Место в активном сете: #$rank"
-  else
-    rank_info="⚠️ Валидатор не в активном сете"
-  fi
-
-  # Отправка основного статуса, всегда при старте
-  message=$(cat <<EOF
-<b>🧾 Статус валидатора</b>
-
-$rank_info
-🚦 Jail: $jailed
-📉 Пропущено блоков: $missed
-EOF
-)
-send_telegram_alert "$message"
-
-  rank_info=""
   changed=0  # флаг изменений
 
   if [ "$found" -eq 1 ]; then
+    rank_info="🔢 Место в активном сете: #$rank"
     if [ -f "$RANK_FILE" ]; then
       prev_rank=$(cat "$RANK_FILE")
       if [ "$rank" -ne "$prev_rank" ]; then
@@ -87,6 +77,7 @@ send_telegram_alert "$message"
     fi
     echo "$rank" > "$RANK_FILE"
   else
+    rank_info="⚠️ Валидатор не в активном сете"
     if [ -f "$RANK_FILE" ]; then
       changed=1
       send_telegram_alert "⚠️ Валидатор выбыл из активного сета!"
@@ -94,7 +85,7 @@ send_telegram_alert "$message"
     fi
   fi
 
-  # Отправка статуса, только если были изменения или jail
+  # Отправка основного статуса, только если были изменения или jail
   if [ "$changed" -eq 1 ] || [ "$jailed" = "true" ]; then
     message=$(cat <<EOF
 <b>🧾 Статус валидатора</b>
@@ -104,6 +95,7 @@ $rank_info
 📉 Пропущено блоков: $missed
 EOF
 )
+    echo "Отправка сообщения о статусе валидатора: $message"  # Отладка отправки сообщения
     send_telegram_alert "$message"
   fi
 
