@@ -9,7 +9,8 @@ sudo apt install -y pass gnupg2
 # Проверка наличия GPG ключей
 if ! gpg --list-keys | grep -q "^pub"; then
   echo -e "\n🛠️ GPG-ключ не найден, создаём автоматически..."
-  export GNUPGHOME=$(mktemp -d)
+
+  # 🔄 ИЗМЕНЕНО: убрано использование временного GNUPGHOME, ключ создаётся в обычной системе
   cat >gen-key-script <<EOF
 %echo Generating GPG key
 Key-Type: RSA
@@ -24,8 +25,9 @@ EOF
 
   gpg --batch --gen-key gen-key-script
   rm gen-key-script
+
+  # 🔄 ИЗМЕНЕНО: больше не используем unset GNUPGHOME, так как его не задавали
   GPG_ID=$(gpg --list-keys --with-colons | grep '^pub' | cut -d':' -f5 | head -n1)
-  unset GNUPGHOME
 else
   echo -e "\n✅ Найден GPG-ключ:"
   gpg --list-keys
@@ -49,4 +51,3 @@ if [[ $1 == "--test" ]]; then
   KEYRING_PASSWORD=$(pass validator/keyring_password)
   echo "KEYRING_PASSWORD=${KEYRING_PASSWORD:0:4}****"
 fi
-
