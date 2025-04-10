@@ -45,13 +45,6 @@ echo "$KEYRING_PASSWORD" | pass insert -m validator/keyring_password
 echo -e "\n✅ Пароль сохранён! Теперь можно использовать его так:"
 echo -e '\nKEYRING_PASSWORD=$(pass validator/keyring_password)'
 
-# Пример автоподстановки
-if [[ $1 == "--test" ]]; then
-  echo -e "\n🔁 Тестовая подстановка:"
-  KEYRING_PASSWORD=$(pass validator/keyring_password)
-  echo "KEYRING_PASSWORD=${KEYRING_PASSWORD:0:4}****"
-fi
-
 # Функция для безопасного получения пароля
 get_keyring_password() {
   # Загружаем пароль из pass только при необходимости
@@ -61,12 +54,26 @@ get_keyring_password() {
 }
 
 # Пример выполнения команды, которая требует KEYRING_PASSWORD
-if [[ $1 == "--list-keys" ]]; then
-  echo -e "\n🔑 Запрос пароля для выполнения команды 0gchaind keys list..."
-  KEYRING_PASSWORD=$(get_keyring_password)
+run_command_with_pass() {
+  # Временно загружаем переменную окружения для команды
+  export KEYRING_PASSWORD=$(get_keyring_password)
   
   # Выполнение команды с использованием пароля
-  export KEYRING_PASSWORD
-  echo "Выполнение команды 0gchaind keys list..."
-  0gchaind keys list --keyring-backend file
+  echo "Выполнение команды: $1"
+  eval "$1"
+  
+  # Сбрасываем переменную окружения после выполнения команды
+  unset KEYRING_PASSWORD
+}
+
+# Пример команды для получения списка кошельков
+if [[ $1 == "--list-keys" ]]; then
+  echo -e "\n🔑 Запрос пароля для выполнения команды 0gchaind keys list..."
+  run_command_with_pass "0gchaind keys list --keyring-backend file"
+fi
+
+# Пример другого сценария
+if [[ $1 == "--get-wallet" ]]; then
+  echo -e "\n🔑 Запрос пароля для получения адреса кошелька..."
+  run_command_with_pass "0gchaind keys show wallet --bech acc -a"
 fi
