@@ -128,17 +128,13 @@ while true; do
         echo -e "${B_YELLOW}Telegram настройки не были введены. Пожалуйста, введите их.${NO_COLOR}"
         read -p "${B_MAGENTA}Введите токен Telegram-бота: ${NO_COLOR}" TELEGRAM_BOT_TOKEN
         read -p "${B_MAGENTA}Введите Chat ID Telegram: ${NO_COLOR}" TELEGRAM_CHAT_ID
-
-        # Сохраняем новые данные в .env
-        echo "TELEGRAM_BOT_TOKEN=\"$TELEGRAM_BOT_TOKEN\"" >> "$ENV_FILE"
-        echo "TELEGRAM_CHAT_ID=\"$TELEGRAM_CHAT_ID\"" >> "$ENV_FILE"
       fi
-      echo -e "${B_GREEN}Включаем мониторинг валидатора...${NO_COLOR}"
-      # Здесь добавьте код для включения мониторинга
+      echo -e "${B_CYAN}Включаем мониторинг валидатора...${NO_COLOR}"
+      # Код для включения мониторинга
       ;;
     7)
-      echo -e "${B_RED}Отключаем мониторинг валидатора...${NO_COLOR}"
-      # Здесь добавьте код для отключения мониторинга
+      echo -e "${B_YELLOW}Отключаем мониторинг валидатора...${NO_COLOR}"
+      # Код для отключения мониторинга
       ;;
     8)
       echo -e "${B_BLUE}Выход из программы...${NO_COLOR}"
