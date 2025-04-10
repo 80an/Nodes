@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Включаем остановку при ошибке, чтобы сразу поймать любые проблемы
+set -e
+
 # Цвета для вывода
 B_GREEN="\e[32m"
 B_YELLOW="\e[33m"
@@ -42,7 +45,7 @@ EOF
 
 # Функция отображения информации и запроса данных
 setup_validator() {
-  #clear
+  clear
   echo "========= 🛠️ Настройка валидатора ========="
   echo "Для управления валидатором необходимо ввести следующие данные:"
 
@@ -75,19 +78,46 @@ setup_validator() {
     if [ "$CHOICE" -eq 1 ]; then
       # Вводим адрес кошелька
       read -p "Введите адрес кошелька: " WALLET_ADDRESS
-      WALLET_NAME=$(printf "%s" "$KEYRING_PASSWORD" | 0gchaind keys show "$WALLET_ADDRESS" --output json | jq -r '.name') # Получаем имя кошелька
+      echo "Получаем имя кошелька для $WALLET_ADDRESS..."
+      WALLET_NAME=$(printf "%s" "$KEYRING_PASSWORD" | 0gchaind keys show "$WALLET_ADDRESS" --output json | jq -r '.name')
+
+      if [ -z "$WALLET_NAME" ]; then
+        echo -e "${B_RED}Ошибка: Не удалось получить имя для кошелька $WALLET_ADDRESS${NO_COLOR}"
+        exit 1
+      fi
+
+      echo "Имя кошелька: $WALLET_NAME"
     elif [ "$CHOICE" -eq 2 ]; then
       # Вводим имя кошелька
       read -p "Введите имя кошелька: " WALLET_NAME
+      echo "Получаем адрес для кошелька $WALLET_NAME..."
       WALLET_ADDRESS=$(printf "%s" "$KEYRING_PASSWORD" | 0gchaind keys show "$WALLET_NAME" --bech acc -a)
+      
+      if [ -z "$WALLET_ADDRESS" ]; then
+        echo -e "${B_RED}Ошибка: Не удалось получить адрес для кошелька $WALLET_NAME${NO_COLOR}"
+        exit 1
+      fi
+
+      echo "Адрес кошелька: $WALLET_ADDRESS"
     else
       echo -e "${B_RED}Неверный выбор. Пожалуйста, выберите 1 или 2.${NO_COLOR}"
       exit 1
     fi
   fi
 
+  # Логирование адреса
+  echo "Полученный адрес кошелька: $WALLET_ADDRESS"
+
   # Получаем адрес валидатора
+  echo "Получаем адрес валидатора для $WALLET_NAME..."
   VALIDATOR_ADDRESS=$(printf "%s" "$KEYRING_PASSWORD" | 0gchaind keys show "$WALLET_NAME" --bech val -a)
+
+  if [ -z "$VALIDATOR_ADDRESS" ]; then
+    echo -e "${B_RED}Ошибка: Не удалось получить адрес валидатора для $WALLET_NAME${NO_COLOR}"
+    exit 1
+  fi
+
+  echo "Адрес валидатора: $VALIDATOR_ADDRESS"
 
   # Сохраняем переменные в .env файл
   save_env
@@ -101,6 +131,7 @@ setup_validator() {
 
 # Вызов функции настройки валидатора
 setup_validator
+
 
 # Функция отображения меню
 show_menu() {
