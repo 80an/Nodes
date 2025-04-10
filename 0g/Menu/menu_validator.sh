@@ -9,6 +9,15 @@ NO_COLOR="\e[0m"
 # Путь к файлу с переменными окружения
 ENV_FILE="$HOME/.validator_env"
 
+# Проверка инициализации pass и наличия сохранённого пароля
+if ! command -v pass &> /dev/null || ! pass show validator/keyring_password &> /dev/null; then
+  echo -e "\n🔐 Настройка менеджера паролей pass..."
+  source <(wget -qO- 'https://raw.githubusercontent.com/80an/Nodes/refs/heads/main/!tools/init-pass.sh')
+fi
+
+# Получаем KEYRING_PASSWORD из pass
+KEYRING_PASSWORD=$(pass validator/keyring_password)
+
 # Функция загрузки переменных из .env файла
 load_env() {
   if [ -f "$ENV_FILE" ]; then
@@ -22,7 +31,6 @@ load_env() {
 save_env() {
   echo "Сохраняем переменные в .env файл..."
   cat > "$ENV_FILE" <<EOF
-KEYRING_PASSWORD=$KEYRING_PASSWORD
 WALLET_NAME=$WALLET_NAME
 WALLET_ADDRESS=$WALLET_ADDRESS
 VALIDATOR_ADDRESS=$VALIDATOR_ADDRESS
@@ -37,16 +45,14 @@ setup_validator() {
   echo "========= 🛠️ Настройка валидатора ========="
   echo "Для управления валидатором необходимо ввести следующие данные:"
 
-  # Запрашиваем данные только в случае, если они еще не сохранены
+# Автоматически загружаем пароль из хранилища  
   if [ -z "$KEYRING_PASSWORD" ]; then
-    # Запрашиваем пароль от keyring
-    echo
-    read -s -p "Введите пароль для keyring: " KEYRING_PASSWORD
-    echo
-  fi
+  echo "📥 Загружаем KEYRING_PASSWORD из pass..."
+  KEYRING_PASSWORD=$(pass validator/keyring_password)
+fi
 
+# Запрашиваем, что мы хотим ввести: имя или адрес кошелька
   if [ -z "$WALLET_NAME" ] || [ -z "$WALLET_ADDRESS" ]; then
-    # Запрашиваем, что мы хотим ввести: имя или адрес кошелька
     echo "Выберите, что вводить:"
     echo "1) Ввести адрес кошелька"
     echo "2) Ввести имя кошелька"
