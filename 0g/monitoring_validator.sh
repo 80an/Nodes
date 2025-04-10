@@ -7,7 +7,7 @@ B_RED="\e[31m"
 NO_COLOR="\e[0m"
 
 ENV_FILE="$HOME/.validator_env"
-RANK_FILE="$HOME/.0g_validator_rank"
+RANK_FILE="$HOME/.validator_rank"
 
 # Загрузка переменных окружения
 if [ -f "$ENV_FILE" ]; then
