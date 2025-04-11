@@ -34,6 +34,7 @@ touch "$REMINDER_LOG"
 initial_proposals=$(0gchaind q gov proposals --output json | jq -c '.proposals[]')
 current_found=false
 latest_id=""
+latest_status=""
 latest_end=""
 
 echo "$initial_proposals" | while IFS= read -r prop; do
@@ -71,27 +72,31 @@ EOF
     send_telegram_alert "$start_msg"
   fi
 
+  # Запоминаем последнее голосование
   if [[ -z "$latest_id" || "$id" -gt "$latest_id" ]]; then
     latest_id="$id"
+    latest_status="$status"
     latest_end=$(echo "$prop" | jq -r '.voting_end_time')
   fi
 done
 
+# Если активных не нашли — сообщаем об этом
 if [ "$current_found" = false ]; then
   formatted_end=$(to_msk "$latest_end")
   msg=$(cat <<EOF
 <b>📊 Текущих голосований нет.</b>
 
-Последнее голосование: №<b>$latest_id</b>
+Последнее предложение: №<b>$latest_id</b>
+<b>📌 Статус:</b> $latest_status
 <b>📅 Завершено:</b> <code>$formatted_end</code>
 
-📉 Проголосовать не нужно, но следите за новыми предложениями!
+📉 Голосовать сейчас не нужно, но следите за новыми пропозалами!
 EOF
 )
   send_telegram_alert "$msg"
 fi
 
-# Основной цикл
+# Основной цикл =====================================================================================
 while true; do
   proposals=$(0gchaind q gov proposals --output json | jq -c '.proposals[]')
 
