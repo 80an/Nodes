@@ -67,8 +67,9 @@ done
 if [ "$active_proposals" = true ]; then
   send_telegram_alert "$message"
 else
-  last_proposal_id=$(echo "$proposals" | jq -r '.[0].id')
-  last_proposal_end=$(echo "$proposals" | jq -r '.[0].content.voting_end_time')
+  last_completed=$(echo "$proposals" | jq -s '[.[] | select(.status != "VotingPeriod")] | sort_by(.id | tonumber) | reverse | .[0]')
+  last_proposal_id=$(echo "$last_completed" | jq -r '.id')
+  last_proposal_end=$(echo "$last_completed" | jq -r '.voting_end_time')
   last_proposal_end_formatted=$(format_date "$last_proposal_end")
   message=$(cat <<EOF
 <b>📊 Текущих голосований нет.</b>
@@ -81,6 +82,7 @@ EOF
 )
   send_telegram_alert "$message"
 fi
+
 
 # Напоминания для активных голосований
 while true; do
