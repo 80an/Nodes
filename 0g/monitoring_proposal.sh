@@ -103,9 +103,6 @@ EOF
 fi
 # ======================================================================
 
-# Инициализация
-init_alerts_file
-
 # Бесконечный цикл проверки
 while true; do
   proposals=$(0gchaind q gov proposals --status voting_period --output json | jq -c '.proposals[]?')
