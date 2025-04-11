@@ -1,15 +1,15 @@
 #!/bin/bash
 
-# Цвета для вывода
 B_GREEN="\e[32m"
 B_YELLOW="\e[33m"
 B_RED="\e[31m"
 NO_COLOR="\e[0m"
 
 ENV_FILE="$HOME/.validator_env"
-RANK_FILE="$HOME/.0G_validator_rank"
+STAKE_FILE="$HOME/.0G_validator_stake"
+JAIL_NOTICE_FILE="$HOME/.0G_validator_jail_notice"
 
-# Загрузка переменных окружения
+# Загрузка переменных
 if [ -f "$ENV_FILE" ]; then
   source "$ENV_FILE"
 else
@@ -17,96 +17,100 @@ else
   exit 1
 fi
 
-# Отправка сообщений в Telegram
 send_telegram_alert() {
   local message="$1"
-  echo "Отправка сообщения в Telegram: $message"  # Добавлено для отладки
   curl -s -X POST "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendMessage" \
-    -d chat_id="$TELEGRAM_CHAT_ID" \
-    -d parse_mode="HTML" \
-    -d text="$message" > /dev/null
+       -d chat_id="$TELEGRAM_CHAT_ID" \
+       -d parse_mode="HTML" \
+       -d text="$message" > /dev/null
 }
 
-# Тестовое сообщение
-send_telegram_alert "Тестовое сообщение от скрипта. Проверка связи."
+# Получаем информацию
+get_stake() {
+  0gchaind q staking validator "$VALIDATOR_ADDRESS" --output json | jq -r '.tokens | tonumber'
+}
 
-# Бесконечный цикл
-while true; do
-  echo "Запуск цикла мониторинга..."  # Отладка начала цикла
+get_missed_blocks() {
+  0gchaind q slashing signing-info $(0gchaind tendermint show-validator) --output json | jq -r '.missed_blocks_counter'
+}
 
-  # Получение jailed статуса
-  jailed=$(0gchaind q staking validator "$VALIDATOR_ADDRESS" --output json | jq -r .jailed)
-  echo "Jailed статус: $jailed"  # Отладка получения jailed статуса
+get_jailed_status() {
+  0gchaind q staking validator "$VALIDATOR_ADDRESS" --output json | jq -r '.jailed'
+}
 
-  # Получение пропущенных блоков
-  missed=$(0gchaind q slashing signing-info $(0gchaind tendermint show-validator) --output json | jq -r .missed_blocks_counter)
-  echo "Пропущено блоков: $missed"  # Отладка получения missed блоков
+get_latest_height() {
+  curl -s "$RPC_URL/status" | jq -r '.result.sync_info.latest_block_height'
+}
 
-  # Получаем список активных валидаторов
-  # active_validators=$(0gchaind q staking validators --output json --limit 200 | jq -r '.validators[] | select(.status=="BOND_STATUS_BONDED") | .operator_address')
-  active_validators=$(0gchaind q staking validators --limit 200 --output json | jq -r '.validators[].operator_address') | select(.status=="BOND_STATUS_BONDED") 
-  echo "Активные валидаторы: $active_validators"  # Отладка списка валидаторов
-0gchaind q staking validators --output json | jq -r '.validators[] | select(.status=="BOND_STATUS_BONDED")
-  rank=1
-  found=0
+get_local_height() {
+  0gchaind status 2>/dev/null | jq -r '.SyncInfo.latest_block_height'
+}
 
-  while IFS= read -r val; do
-    if [ "$val" = "$VALIDATOR_ADDRESS" ]; then
-      found=1
-      break
-    fi
-    rank=$((rank + 1))
-  done <<< "$active_validators"
+# === Первая отправка ===
+initial_jailed=$(get_jailed_status)
+initial_stake=$(get_stake)
+initial_missed=$(get_missed_blocks)
+initial_pid=$$
 
-  rank_info=""
-  changed=0  # флаг изменений
+message=$(cat <<EOF
+<b>📡 Мониторинг запущен</b>
 
-  if [ "$found" -eq 1 ]; then
-    echo "Валидатор найден. Ранг: $rank"
-    rank_info="🔢 Место в активном сете: #$rank"
-    if [ -f "$RANK_FILE" ]; then
-      prev_rank=$(cat "$RANK_FILE")
-      echo "Предыдущий ранг: $prev_rank"  # Добавьте вывод для отладки
-      if [ "$rank" -ne "$prev_rank" ]; then
-        changed=1
-        echo "Ранг изменился, обновляем файл"  # Отладка изменения ранга
-        if [ "$rank" -lt "$prev_rank" ]; then
-          send_telegram_alert "📈 Валидатор поднялся: с #$prev_rank на #$rank"
-        else
-          send_telegram_alert "📉 Валидатор опустился: с #$prev_rank на #$rank"
-        fi
-      fi
-    else
-      changed=1
-      echo "Создаем новый файл для ранга"  # Отладка создания нового файла
-    fi
-    echo "$rank" > "$RANK_FILE"
-  else
-    rank_info="⚠️ Валидатор не в активном сете"
-    if [ -f "$RANK_FILE" ]; then
-      changed=1
-      send_telegram_alert "⚠️ Валидатор выбыл из активного сета!"
-      rm "$RANK_FILE"
-    fi
-  fi
-
-  # Отладка, что условие для отправки сообщения выполняется
-  echo "Изменился ли статус или jail: $changed, jailed: $jailed"
-
-  # Отправка основного статуса, только если были изменения или jail
-  if [ "$changed" -eq 1 ] || [ "$jailed" = "true" ]; then
-    message=$(cat <<EOF
-<b>🧾 Статус валидатора</b>
-
-$rank_info
-🚦 Jail: $jailed
-📉 Пропущено блоков: $missed
+🚦 Jail: $initial_jailed
+💰 Стейк: $initial_stake
+📉 Пропущено блоков: $initial_missed
+🔢 PID процесса: $initial_pid
 EOF
 )
-    echo "Отправка сообщения о статусе валидатора: $message"  # Отладка отправки сообщения
-    send_telegram_alert "$message"
+send_telegram_alert "$message"
+
+# === Главный цикл ===
+last_jail_status="$initial_jailed"
+last_stake="$initial_stake"
+last_jail_alert_ts=0
+
+while true; do
+  jailed=$(get_jailed_status)
+  stake=$(get_stake)
+  missed=$(get_missed_blocks)
+  now_ts=$(date +%s)
+
+  # === Проверка Jail ===
+  if [ "$jailed" = "true" ]; then
+    # Показываем каждые 3 часа
+    if [ $((now_ts - last_jail_alert_ts)) -ge 10800 ]; then
+      local_height=$(get_local_height)
+      remote_height=$(get_latest_height)
+      lag=$((remote_height - local_height))
+      [ "$lag" -lt 0 ] && lag="❌ Ошибка RPC, отставание < 0"
+
+      send_telegram_alert "⛔️ <b>Валидатор в тюрьме!</b>\nНеобходимо принять меры!\n📉 Отставание от RPC: $lag"
+      last_jail_alert_ts=$now_ts
+    fi
+  elif [ "$last_jail_status" = "true" ] && [ "$jailed" = "false" ]; then
+    local_height=$(get_local_height)
+    remote_height=$(get_latest_height)
+    lag=$((remote_height - local_height))
+    send_telegram_alert "✅ <b>Валидатор вышел из тюрьмы!</b>\n📉 Отставание: $lag"
+    last_jail_alert_ts=0
+  fi
+  last_jail_status="$jailed"
+
+  # === Проверка изменения стейка ===
+  if [ "$stake" -ne "$last_stake" ]; then
+    stake_diff=$((stake - last_stake))
+    if [ "$stake_diff" -gt 0 ]; then
+      sign="+$stake_diff 🟢⬆️"
+    else
+      sign="$stake_diff 🔴⬇️"
+    fi
+    send_telegram_alert "💰 Изменение стейка: $stake ($sign)"
+    last_stake="$stake"
   fi
 
-  sleep 300  # Пауза 5 минут (можешь изменить по желанию)
+  # === Предупреждение о некорректных блоках ===
+  if [[ ! "$missed" =~ ^[0-9]+$ ]]; then
+    send_telegram_alert "❗️ Ошибка получения missed_blocks_counter — возможно, RPC не отвечает."
+  fi
 
+  sleep 300
 done
