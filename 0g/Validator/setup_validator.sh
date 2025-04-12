@@ -51,3 +51,14 @@ else
 fi
 
 echo ".env файл успешно создан с переменными окружения!"
+
+# Добавляем автозагрузку .validator_env в .bashrc, если она ещё не прописана
+BASHRC_FILE="$HOME/.bashrc"
+
+if ! grep -q "source \$HOME/.validator_env" "$BASHRC_FILE"; then
+  echo "Добавляем автоматическую загрузку переменных в .bashrc..."
+  echo -e "\n# Загрузка переменных окружения для валидатора\nif [ -f \"\$HOME/.validator_env\" ]; then\n  source \"\$HOME/.validator_env\"\nfi" >> "$BASHRC_FILE"
+  echo "Готово! Переменные будут автоматически подгружаться при запуске терминала."
+else
+  echo "Автоматическая загрузка переменных уже настроена."
+fi
