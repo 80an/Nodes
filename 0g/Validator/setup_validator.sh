@@ -36,19 +36,20 @@ echo "Если хотите, можете пропустить ввод данн
 read -p "Введите токен Telegram-бота (или нажмите Enter, чтобы пропустить): " TELEGRAM_BOT_TOKEN
 read -p "Введите Chat ID Telegram (или нажмите Enter, чтобы пропустить): " TELEGRAM_CHAT_ID
 
-# Запись переменных в .env файл
-echo "KEYRING_PASSWORD=\"$KEYRING_PASSWORD\"" > "$ENV_FILE"
-echo "WALLET_NAME=\"$WALLET_NAME\"" >> "$ENV_FILE"
-echo "WALLET_ADDRESS=\"$WALLET_ADDRESS\"" >> "$ENV_FILE"
-echo "VALIDATOR_ADDRESS=\"$VALIDATOR_ADDRESS\"" >> "$ENV_FILE"
+# Запись переменных в .env файл (с export)
+echo "export KEYRING_PASSWORD=\"$KEYRING_PASSWORD\"" > "$ENV_FILE"
+echo "export WALLET_NAME=\"$WALLET_NAME\"" >> "$ENV_FILE"
+echo "export WALLET_ADDRESS=\"$WALLET_ADDRESS\"" >> "$ENV_FILE"
+echo "export VALIDATOR_ADDRESS=\"$VALIDATOR_ADDRESS\"" >> "$ENV_FILE"
 
 # Запись переменных для Telegram только если они были введены
 if [ -n "$TELEGRAM_BOT_TOKEN" ] && [ -n "$TELEGRAM_CHAT_ID" ]; then
-  echo "TELEGRAM_BOT_TOKEN=\"$TELEGRAM_BOT_TOKEN\"" >> "$ENV_FILE"
-  echo "TELEGRAM_CHAT_ID=\"$TELEGRAM_CHAT_ID\"" >> "$ENV_FILE"
+  echo "export TELEGRAM_BOT_TOKEN=\"$TELEGRAM_BOT_TOKEN\"" >> "$ENV_FILE"
+  echo "export TELEGRAM_CHAT_ID=\"$TELEGRAM_CHAT_ID\"" >> "$ENV_FILE"
 else
   echo "# Telegram settings can be added later when enabling monitoring" >> "$ENV_FILE"
 fi
+
 
 echo ".env файл успешно создан с переменными окружения!"
 
