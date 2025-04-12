@@ -6,11 +6,14 @@ BASHRC_FILE="$HOME/.bashrc"
 
 # Проверка, существует ли файл .env и загрузка переменных, если он существует
 if [ -f "$ENV_FILE" ]; then
+  echo
   echo "$ENV_FILE найден. Загружаем переменные..."
   # Загружаем переменные из .validator_env файла
+  echo
   source "$ENV_FILE"
   echo "Переменные успешно загружены из .validator_env файла."
 else
+  echo
   echo "$ENV_FILE не найден. Выполним настройку переменных."
   
  echo
