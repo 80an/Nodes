@@ -3,6 +3,14 @@
 # Файл для хранения переменных окружения
 ENV_FILE="$HOME/.validator_env"
 
+# Если файл уже существует, просто загружаем его и выходим
+if [ -f "$ENV_FILE" ]; then
+  echo "$ENV_FILE найден. Загружаем переменные..."
+  source "$ENV_FILE"
+  echo "Переменные загружены. Повторный ввод не требуется."
+  return 0 2>/dev/null || exit 0
+fi
+
 # Запрашиваем пароль для Keyring
 read -s -p "Введите пароль для Keyring: " KEYRING_PASSWORD
 echo
