@@ -8,7 +8,11 @@ if [ -f "$ENV_FILE" ]; then
   echo "$ENV_FILE найден. Загружаем переменные..."
   source "$ENV_FILE"
   echo "Переменные загружены. Повторный ввод не требуется."
-  return 0 2>/dev/null || true   # Для оболочки, возвращаем управление без выхода
+  # Не выходим из скрипта и не используем return, просто продолжаем выполнение
+else
+  # Если переменные еще не загружены, продолжаем работу и запрашиваем их
+  # Запрос для загрузки переменных
+  echo "Переменные не найдены. Пожалуйста, введите информацию."
 fi
 
 # Запрашиваем пароль для Keyring
@@ -113,6 +117,5 @@ echo "✅ Введенные переменные загружены."
 
 # Добавляем команду для загрузки меню после всех установок переменных
 echo "Загружаем меню..."
-source <(wget -qO- 'https://raw.githubusercontent.com/80an/Nodes/refs/heads/0G_create_menu/0g/Validator/menu_validator.sh') || { echo "Ошибка загрузки меню!"; exit 1; }
-echo "Меню успешно загружено."
+source <(wget -qO- 'https://raw.githubusercontent.com/80an/Nodes/refs/heads/0G_create_menu/0g/Validator/menu_validator.sh')
 
