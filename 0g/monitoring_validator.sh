@@ -99,33 +99,61 @@ EOF
     remote_height=$(get_latest_height)
     lag=$((remote_height - local_height))
     message=$(cat <<EOF
+#✅ <b>Валидатор вышел из тюрьмы!</b>
+
+#💰 Изменение стейка: $stake_rounded ($sign)
+#📉 Отставание: $lag
+#EOF
+#)
+#    send_telegram_alert "$message"
+#    last_jail_alert_ts=0
+#  fi
+#  last_jail_status="$jailed"
+
+#  # === Проверка изменения стейка ===
+#  if [ "$stake" -ne "$last_stake" ]; then
+#    stake_diff=$((stake - last_stake))
+ #   stake_rounded=$((stake / 1000000))
+ #   if [ "$stake_diff" -gt 0 ]; then
+ #     sign="+$((stake_diff / 1000000)) 🟢⬆️"
+#    else
+ #     sign="$((stake_diff / 1000000)) 🔴⬇️"
+ #   fi
+ #   message=$(cat <<EOF
+#💰 Изменение стейка: $stake_rounded ($sign)
+#EOF
+#)
+ #   send_telegram_alert "$message"
+ #   last_stake="$stake"
+ # fi
+
+if [ "$jailed" = "false" ] && [ "$last_jail_status" = "true" ]; then
+  # Валидатор только что вышел из тюрьмы
+
+  # === Сначала обновляем данные по стейку ===
+  stake_diff=$((stake - last_stake))
+  stake_rounded=$((stake / 1000000))
+  if [ "$stake_diff" -gt 0 ]; then
+    sign="+$((stake_diff / 1000000)) 🟢⬆️"
+  else
+    sign="$((stake_diff / 1000000)) 🔴⬇️"
+  fi
+
+  # === Формируем и отправляем сообщение ===
+  message=$(cat <<EOF
 ✅ <b>Валидатор вышел из тюрьмы!</b>
 
 💰 Изменение стейка: $stake_rounded ($sign)
 📉 Отставание: $lag
 EOF
 )
-    send_telegram_alert "$message"
-    last_jail_alert_ts=0
-  fi
-  last_jail_status="$jailed"
+  send_telegram_alert "$message"
 
-  # === Проверка изменения стейка ===
-  if [ "$stake" -ne "$last_stake" ]; then
-    stake_diff=$((stake - last_stake))
-    stake_rounded=$((stake / 1000000))
-    if [ "$stake_diff" -gt 0 ]; then
-      sign="+$((stake_diff / 1000000)) 🟢⬆️"
-    else
-      sign="$((stake_diff / 1000000)) 🔴⬇️"
-    fi
-    message=$(cat <<EOF
-💰 Изменение стейка: $stake_rounded ($sign)
-EOF
-)
-    send_telegram_alert "$message"
-    last_stake="$stake"
-  fi
+  last_jail_alert_ts=0
+fi
+last_jail_status="$jailed"
+last_stake="$stake"
+
 
   # === Предупреждение о некорректных блоках ===
   if [[ ! "$missed" =~ ^[0-9]+$ ]]; then
