@@ -52,12 +52,20 @@ fi
     exit 1
   fi
 
+# Запрос токена и чат ID с возможностью пропустить ввод
+  echo
+  read -p "Введите токен (или нажмите ENTER, чтобы пропустить): " TOKEN
+  echo
+  read -p "Введите чат ID (или нажмите ENTER, чтобы пропустить): " CHAT_ID
+
 # Сохраняем переменные в файл
 {
   echo "KEYRING_PASSWORD=\"$KEYRING_PASSWORD\""
   echo "WALLET_NAME=\"$WALLET_NAME\""
   echo "WALLET_ADDRESS=\"$WALLET_ADDRESS\""
   echo "VALIDATOR_ADDRESS=\"$VALIDATOR_ADDRESS\""
+  [ -n "$TOKEN" ] && echo "TOKEN=\"$TOKEN\""
+  [ -n "$CHAT_ID" ] && echo "CHAT_ID=\"$CHAT_ID\""
 } > "$HOME/.validator_env"
 
   echo
@@ -65,6 +73,8 @@ fi
   echo "  WALLET_NAME: $WALLET_NAME"
   echo "  WALLET_ADDRESS: $WALLET_ADDRESS"
   echo "  VALIDATOR_ADDRESS: $VALIDATOR_ADDRESS"
+  [ -n "$TOKEN" ] && echo "  TOKEN: $TOKEN"
+  [ -n "$CHAT_ID" ] && echo "  CHAT_ID: $CHAT_ID"
 fi
 
 # Проверка, существует ли уже команда для автоматической загрузки переменных в .bashrc
