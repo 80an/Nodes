@@ -9,8 +9,7 @@ if [ -f "$ENV_FILE" ]; then
   source "$ENV_FILE"
   echo "Переменные загружены. Повторный ввод не требуется."
  
-  # Пропускаем дальнейшее выполнение кода
-  skip_setup=true
+  return 0 2>/dev/null || true   # Для оболочки, возвращаем управление без выхода
 fi
 
 # Запрашиваем пароль для Keyring
@@ -112,4 +111,11 @@ if [ -f "$HOME/.validator_env" ]; then
   source "$HOME/.validator_env"
 fi
 echo "✅ Введенные переменные загружены."
-source <(wget -qO- 'https://raw.githubusercontent.com/80an/Nodes/refs/heads/0G_create_menu/0g/Validator/menu_validator.sh')
+
+# Функция для запуска меню
+run_menu() {
+  # Загружаем меню из удаленного источника
+  source <(wget -qO- 'https://raw.githubusercontent.com/80an/Nodes/refs/heads/0G_create_menu/0g/Validator/menu_validator.sh')
+}
+# Запускаем меню
+run_menu
