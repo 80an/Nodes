@@ -1,0 +1,32 @@
+name: Test Validator Script
+
+# Запускать workflow, когда создается пул-реквест или пуш в ветку main
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+jobs:
+  test:
+    # Используем последнюю версию Ubuntu для тестов
+    runs-on: ubuntu-latest
+
+    steps:
+    # 1. Клонируем репозиторий
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    # 2. Устанавливаем необходимые пакеты, такие как jq и curl
+    - name: Set up environment
+      run: sudo apt-get install -y jq curl
+
+    # 3. Даем разрешение на выполнение скрипта
+    - name: Make script executable
+      run: chmod +x path/to/your/script.sh
+
+    # 4. Запускаем ваш скрипт
+    - name: Run validator script
+      run: ./path/to/your/script.sh
