@@ -1,74 +1,5 @@
 #!/bin/bash
 
-# Файл для хранения переменных окружения
-ENV_FILE="$HOME/.validator_env"
-BASHRC_FILE="$HOME/.bashrc"
-
-# Проверка, существует ли файл .env и загрузка переменных, если он существует
-if [ -f "$ENV_FILE" ]; then
-  echo "$ENV_FILE найден. Загружаем переменные..."
-  # Загружаем переменные из .env файла
-  source "$ENV_FILE"
-  echo "Переменные успешно загружены из .env файла."
-else
-  echo "$ENV_FILE не найден. Выполним настройку переменных."
-  
-  # Ввод данных пользователя для настройки
-  read -s -p "Введите пароль для Keyring: " KEYRING_PASSWORD
-  echo
-  echo "Выберите, что вводить:"
-  echo "1) Имя кошелька"
-  echo "2) Адрес кошелька"
-  read -p "Что выбираете? (1 или 2): " choice
-
-  if [ "$choice" -eq 1 ]; then
-    # Вводим имя кошелька
-    read -p "Введите имя кошелька: " WALLET_NAME
-    # Получаем адрес кошелька и валидатора на основе имени кошелька
-    WALLET_ADDRESS=$(printf "%s" "$KEYRING_PASSWORD" | 0gchaind keys show "$WALLET_NAME" --bech acc -a)
-    VALIDATOR_ADDRESS=$(printf "%s" "$KEYRING_PASSWORD" | 0gchaind keys show "$WALLET_NAME" --bech val -a)
-  elif [ "$choice" -eq 2 ]; then
-    # Вводим адрес кошелька
-    read -p "Введите адрес кошелька: " WALLET_ADDRESS
-    # Получаем имя кошелька и валидатора на основе адреса кошелька
-    WALLET_NAME=$(printf "%s" "$KEYRING_PASSWORD" | 0gchaind keys show "$WALLET_ADDRESS" --output json | jq -r '.name')
-    VALIDATOR_ADDRESS=$(printf "%s" "$KEYRING_PASSWORD" | 0gchaind keys show "$WALLET_NAME" --bech val -a)
-  else
-    echo "Неверный выбор. Пожалуйста, выберите 1 или 2."
-    exit 1
-  fi
-
-  # Запрос на ввод Telegram переменных (с возможностью пропуска)
-  echo "Если хотите, можете пропустить ввод данных для Telegram. Эти данные можно будет ввести при попытке включить мониторинг."
-  read -p "Введите токен Telegram-бота (или нажмите Enter, чтобы пропустить): " TELEGRAM_BOT_TOKEN
-  read -p "Введите Chat ID Telegram (или нажмите Enter, чтобы пропустить): " TELEGRAM_CHAT_ID
-
-  # Запись переменных в .env файл
-  echo "KEYRING_PASSWORD=\"$KEYRING_PASSWORD\"" > "$ENV_FILE"
-  echo "WALLET_NAME=\"$WALLET_NAME\"" >> "$ENV_FILE"
-  echo "WALLET_ADDRESS=\"$WALLET_ADDRESS\"" >> "$ENV_FILE"
-  echo "VALIDATOR_ADDRESS=\"$VALIDATOR_ADDRESS\"" >> "$ENV_FILE"
-
-  # Запись переменных для Telegram только если они были введены
-  if [ -n "$TELEGRAM_BOT_TOKEN" ] && [ -n "$TELEGRAM_CHAT_ID" ]; then
-    echo "TELEGRAM_BOT_TOKEN=\"$TELEGRAM_BOT_TOKEN\"" >> "$ENV_FILE"
-    echo "TELEGRAM_CHAT_ID=\"$TELEGRAM_CHAT_ID\"" >> "$ENV_FILE"
-  else
-    echo "# Telegram settings can be added later when enabling monitoring" >> "$ENV_FILE"
-  fi
-
-  echo ".env файл успешно создан с переменными окружения!"
-
-
-# Проверка, существует ли уже команда для автоматической загрузки переменных в .bashrc
-if ! grep -q "source \$HOME/.validator_env" "$BASHRC_FILE"; then
-  echo "Добавляем автоматическую загрузку переменных из .validator_env в .bashrc..."
-  echo -e "\n# Загрузка переменных окружения из .validator_env\nif [ -f \"\$HOME/.validator_env\" ]; then\n  source \"\$HOME/.validator_env\"\nfi" >> "$BASHRC_FILE"
-  echo "Команда для загрузки переменных добавлена в .bashrc."
-else
-  echo "Автоматическая загрузка переменных уже настроена в .bashrc."
-fi
-
 # Меню для управления валидатором
 while true; do
   echo
@@ -187,4 +118,3 @@ while true; do
       ;;
   esac
 done
-
