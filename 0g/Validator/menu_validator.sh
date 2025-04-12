@@ -40,7 +40,7 @@ elif [ "$choice" -eq 2 ]; then
   read -p "Введите адрес кошелька (начинается на 0g...): " WALLET_ADDRESS
 
   # Получаем имя кошелька по адресу
-  WALLET_NAME=$(printf "%s" "$KEYRING_PASSWORD" | 0gchaind keys show $WALLET_ADDRESS --output json | jq -r '.name' 2>/dev/null)
+  WALLET_NAME=$(printf "%s" "$KEYRING_PASSWORD" | 0gchaind keys show "$WALLET_ADDRESS" --output json | jq -r '.name' 2>/dev/null)
   if [ -z "$WALLET_NAME" ]; then
     echo "❌ Ошибка: Не удалось найти имя кошелька для адреса '$WALLET_ADDRESS'."
     exit 1
