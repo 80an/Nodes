@@ -62,3 +62,36 @@ if ! grep -q "source \$HOME/.validator_env" "$BASHRC_FILE"; then
 else
   echo "Автоматическая загрузка переменных уже настроена."
 fi
+# === Автоматическая подгрузка переменных при запуске терминала ===
+
+# Определяем текущую оболочку
+USER_SHELL=$(basename "$SHELL")
+SHELL_RC="$HOME/.bashrc"
+
+if [[ "$USER_SHELL" == "zsh" ]]; then
+  SHELL_RC="$HOME/.zshrc"
+fi
+
+# Добавляем source .validator_env в RC-файл (если не добавлен)
+if ! grep -q 'source \$HOME/.validator_env' "$SHELL_RC" && ! grep -q 'source $HOME/.validator_env' "$SHELL_RC"; then
+  echo "Добавляем автоматическую подгрузку переменных в $SHELL_RC..."
+  echo -e "\n# Загрузка переменных валидатора\nif [ -f \"\$HOME/.validator_env\" ]; then\n  source \"\$HOME/.validator_env\"\nfi" >> "$SHELL_RC"
+  echo "✅ Добавлено в $SHELL_RC"
+else
+  echo "✅ Автозагрузка уже настроена в $SHELL_RC"
+fi
+
+# Обеспечиваем запуск RC-файла при login-сессии
+PROFILE_FILE="$HOME/.profile"
+if [ "$SHELL_RC" = "$HOME/.bashrc" ]; then
+  if ! grep -q 'source ~/.bashrc' "$PROFILE_FILE"; then
+    echo "Добавляем source ~/.bashrc в ~/.profile для login-сессий..."
+    echo 'source ~/.bashrc' >> "$PROFILE_FILE"
+    echo "✅ Добавлено в ~/.profile"
+  else
+    echo "✅ ~/.profile уже запускает ~/.bashrc"
+  fi
+fi
+
+echo "✅ Настройка завершена. Перезапусти терминал или выполни:"
+echo "source $SHELL_RC"
