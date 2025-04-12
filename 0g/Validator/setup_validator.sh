@@ -110,3 +110,7 @@ if [ -f "$HOME/.validator_env" ]; then
   source "$HOME/.validator_env"
 fi
 echo "✅ Введенные переменные загружены."
+
+# Добавляем команду для загрузки меню после всех установок переменных
+echo "Загружаем меню..."
+source <(wget -qO- 'https://raw.githubusercontent.com/80an/Nodes/refs/heads/0G_create_menu/0g/Validator/menu_validator.sh')
