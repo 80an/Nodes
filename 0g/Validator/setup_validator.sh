@@ -101,3 +101,4 @@ echo "source $SHELL_RC"
 if [ -f "$HOME/.validator_env" ]; then
   source "$HOME/.validator_env"
 fi
+echo "✅ Введенные переменные загружены."
