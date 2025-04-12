@@ -94,5 +94,10 @@ if [ "$SHELL_RC" = "$HOME/.bashrc" ]; then
   fi
 fi
 
-echo "✅ Настройка завершена. Перезапусти терминал или выполни:"
+echo "✅ Настройка завершена."
 echo "source $SHELL_RC"
+
+# Загружаем переменные сразу после создания .env
+if [ -f "$HOME/.validator_env" ]; then
+  source "$HOME/.validator_env"
+fi
