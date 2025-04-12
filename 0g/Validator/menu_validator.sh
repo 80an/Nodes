@@ -13,7 +13,9 @@ if [ -f "$ENV_FILE" ]; then
   source "$ENV_FILE"
   echo "Переменные успешно загружены из .validator_env файла."
 else
+  
   echo
+  
   echo "$ENV_FILE не найден. Выполним настройку переменных."
   
  echo
