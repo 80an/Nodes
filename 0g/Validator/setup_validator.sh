@@ -8,8 +8,8 @@ if [ -f "$ENV_FILE" ]; then
   echo "$ENV_FILE найден. Загружаем переменные..."
   source "$ENV_FILE"
   echo "Переменные загружены. Повторный ввод не требуется."
- # Запускаем меню
-source <(wget -qO- 'https://raw.githubusercontent.com/80an/Nodes/refs/heads/0G_create_menu/0g/Validator/menu_validator.sh')
+  source <(wget -qO- 'https://raw.githubusercontent.com/80an/Nodes/refs/heads/0G_create_menu/0g/Validator/menu_validator.sh')
+  return 0 2>/dev/null || exit 0
 fi
 
 # Запрашиваем пароль для Keyring
@@ -111,6 +111,3 @@ if [ -f "$HOME/.validator_env" ]; then
   source "$HOME/.validator_env"
 fi
 echo "✅ Введенные переменные загружены."
-
-
-
