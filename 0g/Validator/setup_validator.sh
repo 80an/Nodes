@@ -3,6 +3,14 @@
 # Файл для хранения переменных окружения
 ENV_FILE="$HOME/.validator_env"
 
+# Если файл уже существует, просто загружаем его и выходим
+if [ -f "$ENV_FILE" ]; then
+  echo "$ENV_FILE найден. Загружаем переменные..."
+  source "$ENV_FILE"
+  echo "Переменные загружены. Повторный ввод не требуется."
+  return 0 2>/dev/null || exit 0
+fi
+
 # Запрашиваем пароль для Keyring
 read -s -p "Введите пароль для Keyring: " KEYRING_PASSWORD
 echo
@@ -36,18 +44,69 @@ echo "Если хотите, можете пропустить ввод данн
 read -p "Введите токен Telegram-бота (или нажмите Enter, чтобы пропустить): " TELEGRAM_BOT_TOKEN
 read -p "Введите Chat ID Telegram (или нажмите Enter, чтобы пропустить): " TELEGRAM_CHAT_ID
 
-# Запись переменных в .env файл
-echo "KEYRING_PASSWORD=\"$KEYRING_PASSWORD\"" > "$ENV_FILE"
-echo "WALLET_NAME=\"$WALLET_NAME\"" >> "$ENV_FILE"
-echo "WALLET_ADDRESS=\"$WALLET_ADDRESS\"" >> "$ENV_FILE"
-echo "VALIDATOR_ADDRESS=\"$VALIDATOR_ADDRESS\"" >> "$ENV_FILE"
+# Запись переменных в .env файл (с export)
+echo "export KEYRING_PASSWORD=\"$KEYRING_PASSWORD\"" > "$ENV_FILE"
+echo "export WALLET_NAME=\"$WALLET_NAME\"" >> "$ENV_FILE"
+echo "export WALLET_ADDRESS=\"$WALLET_ADDRESS\"" >> "$ENV_FILE"
+echo "export VALIDATOR_ADDRESS=\"$VALIDATOR_ADDRESS\"" >> "$ENV_FILE"
 
 # Запись переменных для Telegram только если они были введены
 if [ -n "$TELEGRAM_BOT_TOKEN" ] && [ -n "$TELEGRAM_CHAT_ID" ]; then
-  echo "TELEGRAM_BOT_TOKEN=\"$TELEGRAM_BOT_TOKEN\"" >> "$ENV_FILE"
-  echo "TELEGRAM_CHAT_ID=\"$TELEGRAM_CHAT_ID\"" >> "$ENV_FILE"
+  echo "export TELEGRAM_BOT_TOKEN=\"$TELEGRAM_BOT_TOKEN\"" >> "$ENV_FILE"
+  echo "export TELEGRAM_CHAT_ID=\"$TELEGRAM_CHAT_ID\"" >> "$ENV_FILE"
 else
   echo "# Telegram settings can be added later when enabling monitoring" >> "$ENV_FILE"
 fi
 
+
 echo ".env файл успешно создан с переменными окружения!"
+
+# Добавляем автозагрузку .validator_env в .bashrc, если она ещё не прописана
+BASHRC_FILE="$HOME/.bashrc"
+
+if ! grep -q "source \$HOME/.validator_env" "$BASHRC_FILE"; then
+  echo "Добавляем автоматическую загрузку переменных в .bashrc..."
+  echo -e "\n# Загрузка переменных окружения для валидатора\nif [ -f \"\$HOME/.validator_env\" ]; then\n  source \"\$HOME/.validator_env\"\nfi" >> "$BASHRC_FILE"
+  echo "Готово! Переменные будут автоматически подгружаться при запуске терминала."
+else
+  echo "Автоматическая загрузка переменных уже настроена."
+fi
+# === Автоматическая подгрузка переменных при запуске терминала ===
+
+# Определяем текущую оболочку
+USER_SHELL=$(basename "$SHELL")
+SHELL_RC="$HOME/.bashrc"
+
+if [[ "$USER_SHELL" == "zsh" ]]; then
+  SHELL_RC="$HOME/.zshrc"
+fi
+
+# Добавляем source .validator_env в RC-файл (если не добавлен)
+if ! grep -q 'source \$HOME/.validator_env' "$SHELL_RC" && ! grep -q 'source $HOME/.validator_env' "$SHELL_RC"; then
+  echo "Добавляем автоматическую подгрузку переменных в $SHELL_RC..."
+  echo -e "\n# Загрузка переменных валидатора\nif [ -f \"\$HOME/.validator_env\" ]; then\n  source \"\$HOME/.validator_env\"\nfi" >> "$SHELL_RC"
+  echo "✅ Добавлено в $SHELL_RC"
+else
+  echo "✅ Автозагрузка уже настроена в $SHELL_RC"
+fi
+
+# Обеспечиваем запуск RC-файла при login-сессии
+PROFILE_FILE="$HOME/.profile"
+if [ "$SHELL_RC" = "$HOME/.bashrc" ]; then
+  if ! grep -q 'source ~/.bashrc' "$PROFILE_FILE"; then
+    echo "Добавляем source ~/.bashrc в ~/.profile для login-сессий..."
+    echo 'source ~/.bashrc' >> "$PROFILE_FILE"
+    echo "✅ Добавлено в ~/.profile"
+  else
+    echo "✅ ~/.profile уже запускает ~/.bashrc"
+  fi
+fi
+
+echo "✅ Настройка завершена."
+echo "source $SHELL_RC"
+
+# Загружаем переменные сразу после создания .env
+if [ -f "$HOME/.validator_env" ]; then
+  source "$HOME/.validator_env"
+fi
+echo "✅ Введенные переменные загружены."
