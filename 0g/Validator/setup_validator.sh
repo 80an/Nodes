@@ -17,19 +17,19 @@ if [ "$choice" -eq 1 ]; then
   # Вводим имя кошелька
   read -p "Введите имя кошелька: " WALLET_NAME
   # Получаем адрес кошелька на основе имени
-  WALLET_ADDRESS=$(echo "$KEYRING_PASSWORD" | 0gchaind keys show "$WALLET_NAME" --bech acc -a)
+  WALLET_ADDRESS=$(printf "%s" "$KEYRING_PASSWORD" | 0gchaind keys show "$WALLET_NAME" --bech acc -a)
 elif [ "$choice" -eq 2 ]; then
   # Вводим адрес кошелька
   read -p "Введите адрес кошелька: " WALLET_ADDRESS
   # Получаем имя кошелька на основе адреса
-  WALLET_NAME=$(echo "$KEYRING_PASSWORD" | 0gchaind keys show "$WALLET_ADDRESS" --output json | jq -r '.name')
+  WALLET_NAME=$(printf "%s" "$KEYRING_PASSWORD" | 0gchaind keys show "$WALLET_ADDRESS" --output json | jq -r '.name')
 else
   echo "Неверный выбор. Пожалуйста, выберите 1 или 2."
   exit 1
 fi
 
 # Получаем адрес валидатора на основе имени кошелька
-VALIDATOR_ADDRESS=$(echo "$KEYRING_PASSWORD" | 0gchaind keys show "$WALLET_NAME" --bech val -a)
+VALIDATOR_ADDRESS=$(printf "%s" "$KEYRING_PASSWORD" | 0gchaind keys show "$WALLET_NAME" --bech val -a)
 
 # Запрос на ввод Telegram данных (с возможностью пропуска)
 echo "Если хотите, можете пропустить ввод данных для Telegram. Эти данные можно будет ввести при попытке включить мониторинг."
