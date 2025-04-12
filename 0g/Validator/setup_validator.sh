@@ -8,7 +8,7 @@ if [ -f "$ENV_FILE" ]; then
   echo "$ENV_FILE найден. Загружаем переменные..."
   source "$ENV_FILE"
   echo "Переменные загружены. Повторный ввод не требуется."
-  return 0 2>/dev/null || exit 0
+  exit 0
 fi
 
 # Запрашиваем пароль для Keyring
