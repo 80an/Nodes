@@ -7,40 +7,70 @@ BASHRC_FILE="$HOME/.bashrc"
 # Проверка, существует ли файл .env и загрузка переменных, если он существует
 if [ -f "$ENV_FILE" ]; then
   echo "$ENV_FILE найден. Загружаем переменные..."
-  # Загружаем переменные из .env файла
+  # Загружаем переменные из .validator_env файла
   source "$ENV_FILE"
-  echo "Переменные успешно загружены из .env файла."
+  echo "Переменные успешно загружены из .validator_env файла."
 else
   echo "$ENV_FILE не найден. Выполним настройку переменных."
   
-  # Ввод данных пользователя для настройки
-  read -s -p "Введите пароль для Keyring: " KEYRING_PASSWORD
-  echo
+ echo
+read -s -p "Введите пароль для Keyring: " KEYRING_PASSWORD
+echo
 
-  echo "Выберите, что вводить:"
-  echo "1) Имя кошелька"
-  echo "2) Адрес кошелька"
-  read -p "Что выбираете? (1 или 2): " choice
+echo "Выберите, что вводить:"
+echo "1) Имя кошелька"
+echo "2) Адрес кошелька"
+read -p "Что выбираете? (1 или 2): " choice
 
-  if [ "$choice" -eq 1 ]; then
-    # Вводим имя кошелька
-    read -p "Введите имя кошелька: " WALLET_NAME
-  elif [ "$choice" -eq 2 ]; then
-    # Вводим адрес кошелька
-    read -p "Введите адрес кошелька: " WALLET_ADDRESS
-  else
-    echo "Неверный выбор. Пожалуйста, выберите 1 или 2."
+if [ "$choice" -eq 1 ]; then
+  read -p "Введите имя кошелька: " WALLET_NAME
+
+  # Получаем адрес кошелька
+  WALLET_ADDRESS=$(printf "%s" "$KEYRING_PASSWORD" | 0gchaind keys show "$WALLET_NAME" --bech acc -a 2>/dev/null)
+  if [ -z "$WALLET_ADDRESS" ]; then
+    echo "❌ Ошибка: Кошелек '$WALLET_NAME' не найден."
+    exit 1
+  fi
+elif [ "$choice" -eq 2 ]; then
+  read -p "Введите адрес кошелька (начинается на 0g...): " WALLET_ADDRESS
+
+  # Получаем имя кошелька по адресу
+  WALLET_NAME=$(printf "%s" "$KEYRING_PASSWORD" | 0gchaind keys show "$WALLET_ADDRESS" -a 2>/dev/null)
+  if [ -z "$WALLET_NAME" ]; then
+    echo "❌ Ошибка: Не удалось найти имя кошелька для адреса '$WALLET_ADDRESS'."
+    exit 1
+  fi
+else
+  echo "Неверный выбор. Пожалуйста, выберите 1 или 2."
+  exit 1
+fi
+
+# Получаем адрес валидатора
+  VALIDATOR_ADDRESS=$(printf "%s" "$KEYRING_PASSWORD" | 0gchaind keys show "$WALLET_NAME" --bech val -a 2>/dev/null)
+  if [ -z "$VALIDATOR_ADDRESS" ]; then
+    echo "❌ Ошибка: Не удалось найти адрес валидатора для кошелька '$WALLET_NAME'."
     exit 1
   fi
 
+# Сохраняем переменные в файл
+{
+  echo "KEYRING_PASSWORD=\"$KEYRING_PASSWORD\""
+  echo "WALLET_NAME=\"$WALLET_NAME\""
+  echo "WALLET_ADDRESS=\"$WALLET_ADDRESS\""
+  echo "VALIDATOR_ADDRESS=\"$VALIDATOR_ADDRESS\""
+} > "$HOME/.validator_env"
+
   echo
-  echo ".env файл успешно создан с переменными окружения!"
+  echo ".validator_env файл успешно создан с переменными:"
+  echo "  WALLET_NAME: $WALLET_NAME"
+  echo "  WALLET_ADDRESS: $WALLET_ADDRESS"
+  echo "  VALIDATOR_ADDRESS: $VALIDATOR_ADDRESS"
 fi
 
 # Проверка, существует ли уже команда для автоматической загрузки переменных в .bashrc
-if ! grep -q "source \$HOME/.env" "$BASHRC_FILE"; then
-  echo "Добавляем автоматическую загрузку переменных из .env в .bashrc..."
-  echo -e "\n# Загрузка переменных окружения из .env\nif [ -f \"\$HOME/.env\" ]; then\n  source \"\$HOME/.env\"\nfi" >> "$BASHRC_FILE"
+if ! grep -q "source \$HOME/.validator_env" "$BASHRC_FILE"; then
+  echo "Добавляем автоматическую загрузку переменных из .validator_env в .bashrc..."
+  echo -e "\n# Загрузка переменных окружения из .validator_env\nif [ -f \"\$HOME/.validator_env\" ]; then\n  source \"\$HOME/.validator_env\"\nfi" >> "$BASHRC_FILE"
   echo "Команда для загрузки переменных добавлена в .bashrc."
 else
   echo "Автоматическая загрузка переменных уже настроена в .bashrc."
