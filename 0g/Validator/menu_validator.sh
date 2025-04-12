@@ -60,12 +60,12 @@ fi
   echo "VALIDATOR_ADDRESS=\"$VALIDATOR_ADDRESS\""
 } > "$HOME/.validator_env"
 
-echo
-echo ".validator_env файл успешно создан с переменными:"
-echo "  WALLET_NAME: $WALLET_NAME"
-echo "  WALLET_ADDRESS: $WALLET_ADDRESS"
-echo "  VALIDATOR_ADDRESS: $VALIDATOR_ADDRESS"
-
+  echo
+  echo ".validator_env файл успешно создан с переменными:"
+  echo "  WALLET_NAME: $WALLET_NAME"
+  echo "  WALLET_ADDRESS: $WALLET_ADDRESS"
+  echo "  VALIDATOR_ADDRESS: $VALIDATOR_ADDRESS"
+fi
 
 # Проверка, существует ли уже команда для автоматической загрузки переменных в .bashrc
 if ! grep -q "source \$HOME/.validator_env" "$BASHRC_FILE"; then
