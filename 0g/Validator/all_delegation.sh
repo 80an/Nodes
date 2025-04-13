@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Файл для хранения переменных окружения
+ENV_FILE="$HOME/.validator_env"
+
 # Получаем список кошельков
 wallet_names=$(printf "%s" "$KEYRING_PASSWORD" | 0gchaind keys list | grep "name:" | awk '{print $2}')
 
