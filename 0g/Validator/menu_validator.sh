@@ -48,7 +48,13 @@ while true; do
       ;;
     5)
       echo "🚪 Вызволить из тюрьмы"
-      # $BINARY tx slashing unjail --from $WALLET_NAME --chain-id $CHAIN_ID --fees 5000$DENOM -y
+       printf "%s" "$KEYRING_PASSWORD" | 0gchaind tx slashing unjail \
+       --from $WALLET_NAME \
+       --chain-id zgtendermint_16600-2 \
+       --gas=auto \
+       --gas-prices 0.003ua0gi \
+       --gas-adjustment=1.6 \
+       -y
       ;;
     6)
       while true; do
