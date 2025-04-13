@@ -21,7 +21,14 @@ while true; do
     1)
       echo "💰 Забрать комиссии и реварды валидатора"
       # Команда для снятия наград и комиссий
-      printf "%s" "$KEYRING_PASSWORD" | 0gchaind tx distribution withdraw-rewards "$VALIDATOR_ADDRESS" --chain-id="zgtendermint_16600-2" --from "$$WALLET_NAME" --commission --gas=auto --gas-prices 0.003ua0gi --gas-adjustment=1.4 -y
+      printf "%s" "$KEYRING_PASSWORD" | 0gchaind tx distribution withdraw-rewards "$VALIDATOR_ADDRESS" \
+      --chain-id="zgtendermint_16600-2" \
+      --from "$WALLET_NAME" \
+      --commission \
+      --gas=auto \
+      --gas-prices 0.003ua0gi \
+      --gas-adjustment=1.4 \
+      -y
       ;;
     2)
       echo "💸 Забрать все реварды со всех кошельков"
