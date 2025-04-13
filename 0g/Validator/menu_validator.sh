@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Файл для хранения переменных окружения
+ENV_FILE="$HOME/.validator_env"
+
 # Меню для управления валидатором
 while true; do
   echo
