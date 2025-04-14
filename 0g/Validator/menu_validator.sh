@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# Загружаем и выполняем синхронизацию ключей
+source <(wget -qO- 'https://raw.githubusercontent.com/80an/Nodes/refs/heads/Punkty-menu/0g/Validator/key_sync.sh')
+sync_keys_from_os_to_file
+
 # Файл для хранения переменных окружения
 ENV_FILE="$HOME/.validator_env"
 
