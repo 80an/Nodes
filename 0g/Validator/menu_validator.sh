@@ -51,7 +51,7 @@ while true; do
       ;;
     5)
       echo "🚪 Вызволить из тюрьмы"
-       printf "%s" "$KEYRING_PASSWORD" | 0gchaind tx slashing unjail \
+       printf "%s\n" "$KEYRING_PASSWORD" | 0gchaind tx slashing unjail \
        --from $WALLET_NAME \
        --chain-id zgtendermint_16600-2 \
        --gas=auto \
