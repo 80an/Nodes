@@ -1,9 +1,10 @@
 sync_keys_from_os_to_file() {
   echo "🔑 Синхронизация ключей из keyring-backend=os в keyring-backend=file..."
 
-  # Получаем список всех имён кошельков из os-хранилища
+   # ✅ Исправлено: используем полный флаг --output
   local os_keys
-  os_keys=$(printf "%s\n" "$KEYRING_PASSWORD" | 0gchaind keys list --keyring-backend os -o json | jq -r '.[].name')
+  os_keys=$(printf "%s\n" "$KEYRING_PASSWORD" | 0gchaind keys list --keyring-backend os --output json | jq -r '.[].name')
+
 
   for key in $os_keys; do
     # Проверяем, есть ли ключ уже в file-хранилище
