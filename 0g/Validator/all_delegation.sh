@@ -1,7 +1,11 @@
 #!/bin/bash
 
-# Файл для хранения переменных окружения
-ENV_FILE="$HOME/.validator_env"
+# Проверка, что необходимые переменные заданы
+if [ -z "$KEYRING_PASSWORD" ] || [ -z "$VALIDATOR_ADDRESS" ]; then
+  echo "❌ Отсутствуют ключевые переменные (KEYRING_PASSWORD или VALIDATOR_ADDRESS)."
+  echo "➡️ Сначала запустите start.sh и setup_validator.sh"
+  exit 1
+fi
 
 # Получаем список кошельков
 wallet_names=$(printf "%s" "$KEYRING_PASSWORD" | 0gchaind keys list | grep "name:" | awk '{print $2}')
@@ -25,7 +29,9 @@ do
         delay=$((RANDOM % 81 + 20))
         echo "⏳ Пауза $delay секунд перед следующим кошельком..."
         sleep "$delay"
-    fi
+     else
+    echo "⚠️ Недостаточный баланс или ошибка для $WALLET_NAME. Пропускаем..."
+  fi
 done
 
 echo "✅ Все делегации успешно выполнены."
