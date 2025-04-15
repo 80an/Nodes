@@ -1,22 +1,29 @@
 #!/bin/bash
 
+# === Цвета ===
 B_GREEN="\e[32m"
 B_YELLOW="\e[33m"
 B_RED="\e[31m"
 NO_COLOR="\e[0m"
 
-ENV_FILE="$HOME/.validator_env"
-STAKE_FILE="$HOME/.0G_validator_stake"
-JAIL_NOTICE_FILE="$HOME/.0G_validator_jail_notice"
-
-# Загрузка переменных
+# === Загрузка переменных ===
+ENV_FILE="$HOME/.validator_config/env"
 if [ -f "$ENV_FILE" ]; then
+  set -o allexport
   source "$ENV_FILE"
+  set +o allexport
 else
-  echo "❌ Не найден файл переменных $ENV_FILE"
+  echo -e "${B_RED}❌ Не найден файл с переменными: $ENV_FILE${NO_COLOR}"
   exit 1
 fi
 
+# === Проверка обязательных переменных ===
+if [ -z "$VALIDATOR_ADDRESS" ] || [ -z "$TELEGRAM_BOT_TOKEN" ] || [ -z "$TELEGRAM_CHAT_ID" ] || [ -z "$RPC_URL" ]; then
+  echo -e "${B_RED}❌ Не все обязательные переменные заданы в $ENV_FILE${NO_COLOR}"
+  exit 1
+fi
+
+# === Telegram уведомление ===
 send_telegram_alert() {
   local message="$1"
   curl -s -X POST "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendMessage" \
@@ -25,7 +32,7 @@ send_telegram_alert() {
        -d text="$message" > /dev/null
 }
 
-# Получаем информацию
+# === Получение данных ===
 get_stake() {
   0gchaind q staking validator "$VALIDATOR_ADDRESS" --output json | jq -r '.tokens | tonumber'
 }
@@ -46,25 +53,23 @@ get_local_height() {
   0gchaind status 2>/dev/null | jq -r '.SyncInfo.latest_block_height'
 }
 
-# === Первая отправка ===
+# === Стартовое уведомление ===
 initial_jailed=$(get_jailed_status)
 initial_stake=$(get_stake)
 initial_missed=$(get_missed_blocks)
 initial_pid=$$
 
 message=$(cat <<EOF
-<b>📡 Мониторинг запущен</b>
-🔢 PID процесса: $initial_pid
-
+<b>📡 Мониторинг валидатора запущен</b>
+🔢 PID: $initial_pid
 🚦 Jail: $initial_jailed
 💰 Стейк: $((initial_stake / 1000000))
 📉 Пропущено блоков: $initial_missed
-
 EOF
 )
 send_telegram_alert "$message"
 
-# === Главный цикл ===
+# === Цикл мониторинга ===
 last_jail_status="$initial_jailed"
 last_stake="$initial_stake"
 last_jail_alert_ts=0
@@ -75,9 +80,8 @@ while true; do
   missed=$(get_missed_blocks)
   now_ts=$(date +%s)
 
-  # === Проверка Jail ===
+  # === Jail ===
   if [ "$jailed" = "true" ]; then
-    # Показываем каждые 3 часа
     if [ $((now_ts - last_jail_alert_ts)) -ge 10800 ]; then
       local_height=$(get_local_height)
       remote_height=$(get_latest_height)
@@ -86,8 +90,6 @@ while true; do
 
       message=$(cat <<EOF
 ⛔️ <b>Валидатор в тюрьме!</b>
-
-Необходимо принять меры!
 📉 Отставание от RPC: $lag
 EOF
 )
@@ -95,78 +97,28 @@ EOF
       last_jail_alert_ts=$now_ts
     fi
   elif [ "$last_jail_status" = "true" ] && [ "$jailed" = "false" ]; then
-    local_height=$(get_local_height)
-    remote_height=$(get_latest_height)
-    lag=$((remote_height - local_height))
+    stake_diff=$((stake - last_stake))
+    stake_rounded=$((stake / 1000000))
+    sign=$( [ "$stake_diff" -gt 0 ] && echo "+$((stake_diff / 1000000)) 🟢⬆️" || echo "$((stake_diff / 1000000)) 🔴⬇️" )
+    lag=$(( $(get_latest_height) - $(get_local_height) ))
+
     message=$(cat <<EOF
-#✅ <b>Валидатор вышел из тюрьмы!</b>
-
-#💰 Изменение стейка: $stake_rounded ($sign)
-#📉 Отставание: $lag
-#EOF
-#)
-#    send_telegram_alert "$message"
-#    last_jail_alert_ts=0
-#  fi
-#  last_jail_status="$jailed"
-
-#  # === Проверка изменения стейка ===
-#  if [ "$stake" -ne "$last_stake" ]; then
-#    stake_diff=$((stake - last_stake))
- #   stake_rounded=$((stake / 1000000))
- #   if [ "$stake_diff" -gt 0 ]; then
- #     sign="+$((stake_diff / 1000000)) 🟢⬆️"
-#    else
- #     sign="$((stake_diff / 1000000)) 🔴⬇️"
- #   fi
- #   message=$(cat <<EOF
-#💰 Изменение стейка: $stake_rounded ($sign)
-#EOF
-#)
- #   send_telegram_alert "$message"
- #   last_stake="$stake"
- # fi
-
-if [ "$jailed" = "false" ] && [ "$last_jail_status" = "true" ]; then
-  # Валидатор только что вышел из тюрьмы
-
-  # === Сначала обновляем данные по стейку ===
-  stake_diff=$((stake - last_stake))
-  stake_rounded=$((stake / 1000000))
-  if [ "$stake_diff" -gt 0 ]; then
-    sign="+$((stake_diff / 1000000)) 🟢⬆️"
-  else
-    sign="$((stake_diff / 1000000)) 🔴⬇️"
-  fi
-
-  # === Формируем и отправляем сообщение ===
-  message=$(cat <<EOF
 ✅ <b>Валидатор вышел из тюрьмы!</b>
-
 💰 Изменение стейка: $stake_rounded ($sign)
 📉 Отставание: $lag
 EOF
 )
-  send_telegram_alert "$message"
-
-  last_jail_alert_ts=0
-fi
-last_jail_status="$jailed"
-last_stake="$stake"
-
-
-  # === Предупреждение о некорректных блоках ===
-  if [[ ! "$missed" =~ ^[0-9]+$ ]]; then
-    message=$(cat <<EOF
-❗️ <b>Ошибка получения missed_blocks_counter</b>
-
- Возможно, RPC не отвечает.
- Попробуйте сенить его в меню управления валидатором.
-EOF
-)
     send_telegram_alert "$message"
+    last_jail_alert_ts=0
+  fi
+
+  last_jail_status="$jailed"
+  last_stake="$stake"
+
+  # === Проверка корректности данных ===
+  if [[ ! "$missed" =~ ^[0-9]+$ ]]; then
+    send_telegram_alert "<b>❗️ Ошибка получения missed_blocks_counter</b>%0AВозможно, RPC не отвечает."
   fi
 
   sleep 300
 done
-
