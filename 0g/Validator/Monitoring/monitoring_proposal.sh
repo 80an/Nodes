@@ -1,16 +1,26 @@
 #!/bin/bash
 
-ENV_FILE="$HOME/.validator_env"
+ENV_FILE="$HOME/.validator_config/env"
 PROPOSAL_CACHE="$HOME/.0g_known_proposals"
 REMINDER_LOG="$HOME/.0g_proposal_reminders"
 
 # Загрузка переменных окружения
 if [ -f "$ENV_FILE" ]; then
+  set -o allexport
   source "$ENV_FILE"
+  set +o allexport
 else
   echo "❌ Не найден файл переменных $ENV_FILE"
   exit 1
 fi
+
+# Проверка наличия Telegram переменных
+if [ -z "$TELEGRAM_BOT_TOKEN" ] || [ -z "$TELEGRAM_CHAT_ID" ]; then
+  echo "❌ Переменные Telegram не заданы. Пожалуйста, настройте их в $ENV_FILE"
+  exit 1
+fi
+
+# === Утилиты ===
 
 send_telegram_alert() {
   local message="$1"
@@ -20,43 +30,47 @@ send_telegram_alert() {
     -d text="$message" > /dev/null
 }
 
-# Форматирование времени в МСК
 to_msk() {
   local iso_time="$1"
   date -d "$iso_time +3 hours" +"%d-%m-%Y %H:%M (МСК)"
 }
 
-mkdir -p "$(dirname "$PROPOSAL_CACHE")"
-touch "$PROPOSAL_CACHE"
-touch "$REMINDER_LOG"
+extract_title() {
+  echo "$1" | jq -r '.title // .content.title // .content["@type"] // "Без названия"'
+}
 
-# Стартовая проверка: есть ли активные голосования
-initial_proposals=$(0gchaind q gov proposals --output json | jq -c '.proposals[]')
-current_found=false
+extract_description() {
+  local desc=$(echo "$1" | jq -r '.description // .summary // .content.description // empty')
+  if [[ -z "$desc" || "$desc" == "null" ]]; then
+    desc=$(echo "$1" | jq -r '.content.changes[]? | "\(.subspace): \(.key) => \(.value)"' 2>/dev/null | head -c 400)
+    [[ -z "$desc" ]] && desc="Описание отсутствует"
+  fi
+  echo "$desc" | head -c 400
+}
+
+mkdir -p "$(dirname "$PROPOSAL_CACHE")"
+touch "$PROPOSAL_CACHE" "$REMINDER_LOG"
+
+# === Стартовая проверка ===
+
+proposals_json=$(0gchaind q gov proposals --output json)
+current_proposals=$(echo "$proposals_json" | jq -c '.proposals[]')
+found_current=false
 latest_id=""
 latest_end=""
 
-echo "$initial_proposals" | while IFS= read -r prop; do
+echo "$current_proposals" | while IFS= read -r prop; do
   id=$(echo "$prop" | jq -r '.id')
   status=$(echo "$prop" | jq -r '.status')
 
   if [ "$status" == "PROPOSAL_STATUS_VOTING_PERIOD" ]; then
-    current_found=true
+    found_current=true
     voting_end=$(echo "$prop" | jq -r '.voting_end_time')
+    title=$(extract_title "$prop")
+    description=$(extract_description "$prop")
     msk_time=$(to_msk "$voting_end")
 
-    # Универсально достаём title
-    title=$(echo "$prop" | jq -r '.title // .content.title // .content["@type"] // "Без названия"')
-
-    # Универсально достаём описание
-    description=$(echo "$prop" | jq -r '.description // .summary // .content.description // empty')
-    if [[ -z "$description" || "$description" == "null" ]]; then
-      description=$(echo "$prop" | jq -r '.content.changes[]? | "\(.subspace): \(.key) => \(.value)"' 2>/dev/null | head -c 400)
-      [[ -z "$description" ]] && description="Описание отсутствует"
-    fi
-    description=$(echo "$description" | head -c 400)
-
-    start_msg=$(cat <<EOF
+    msg=$(cat <<EOF
 <b>📢 Текущее голосование №$id</b>
 
 <b>📝 Название:</b> $title
@@ -68,7 +82,7 @@ echo "$initial_proposals" | while IFS= read -r prop; do
 🗳 Не забудьте проголосовать!
 EOF
 )
-    send_telegram_alert "$start_msg"
+    send_telegram_alert "$msg"
   fi
 
   if [[ -z "$latest_id" || "$id" -gt "$latest_id" ]]; then
@@ -77,13 +91,13 @@ EOF
   fi
 done
 
-if [ "$current_found" = false ]; then
-  formatted_end=$(to_msk "$latest_end")
+if [ "$found_current" = false ]; then
+  msk_end=$(to_msk "$latest_end")
   msg=$(cat <<EOF
 <b>📊 Текущих голосований нет.</b>
 
 Последнее голосование: №<b>$latest_id</b>
-<b>📅 Завершено:</b> <code>$formatted_end</code>
+<b>📅 Завершено:</b> <code>$msk_end</code>
 
 📉 Проголосовать не нужно, но следите за новыми предложениями!
 EOF
@@ -91,7 +105,7 @@ EOF
   send_telegram_alert "$msg"
 fi
 
-# Основной цикл
+# === Основной цикл мониторинга ===
 while true; do
   proposals=$(0gchaind q gov proposals --output json | jq -c '.proposals[]')
 
@@ -99,24 +113,16 @@ while true; do
     id=$(echo "$prop" | jq -r '.id')
     status=$(echo "$prop" | jq -r '.status')
     voting_end=$(echo "$prop" | jq -r '.voting_end_time')
-    deadline_ts=$(date -d "$voting_end" +%s 2>/dev/null)
+    deadline_ts=$(date -d "$voting_end" +%s)
+    now_ts=$(date +%s)
+    title=$(extract_title "$prop")
+    description=$(extract_description "$prop")
     msk_time=$(to_msk "$voting_end")
-
-    # Универсально достаём title
-    title=$(echo "$prop" | jq -r '.title // .content.title // .content["@type"] // "Без названия"')
-
-    # Универсально достаём описание
-    description=$(echo "$prop" | jq -r '.description // .summary // .content.description // empty')
-    if [[ -z "$description" || "$description" == "null" ]]; then
-      description=$(echo "$prop" | jq -r '.content.changes[]? | "\(.subspace): \(.key) => \(.value)"' 2>/dev/null | head -c 400)
-      [[ -z "$description" ]] && description="Описание отсутствует"
-    fi
-    description=$(echo "$description" | head -c 400)
 
     # Новое предложение
     if ! grep -q "^$id$" "$PROPOSAL_CACHE"; then
       echo "$id" >> "$PROPOSAL_CACHE"
-      message=$(cat <<EOF
+      msg=$(cat <<EOF
 <b>📢 Новый пропозал №$id</b>
 
 <b>📝 Название:</b> $title
@@ -128,11 +134,10 @@ while true; do
 🗳 Не забудьте проголосовать!
 EOF
 )
-      send_telegram_alert "$message"
+      send_telegram_alert "$msg"
     fi
 
     # Напоминания
-    now_ts=$(date +%s)
     for interval in 86400 10800 3600; do
       label="$id-$interval"
       if [ $((deadline_ts - now_ts)) -le $interval ] && ! grep -q "$label" "$REMINDER_LOG"; then
@@ -141,7 +146,8 @@ EOF
           10800) msg_time="⏰ Осталось 3 часа до окончания голосования";;
           3600)  msg_time="⏰ Остался 1 час до окончания голосования";;
         esac
-        reminder_msg=$(cat <<EOF
+
+        msg=$(cat <<EOF
 <b>🔔 Напоминание о голосовании №$id</b>
 
 <b>📝 Название:</b> $title
@@ -153,7 +159,7 @@ EOF
 $msg_time
 EOF
 )
-        send_telegram_alert "$reminder_msg"
+        send_telegram_alert "$msg"
         echo "$label" >> "$REMINDER_LOG"
       fi
     done
