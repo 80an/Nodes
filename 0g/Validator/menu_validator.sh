@@ -1,8 +1,18 @@
 #!/bin/bash
 
+# Загружаем переменные окружения из файла
+if [ -f "$HOME/.validator_config/env" ]; then
+  set -o allexport
+  source "$HOME/.validator_config/env"
+  set +o allexport
+else
+  echo "❌ Файл с переменными не найден. Пожалуйста, сначала запустите setup_per.sh."
+  exit 1
+fi
+
 # Проверка, что все необходимые переменные загружены
 if [ -z "$KEYRING_PASSWORD" ] || [ -z "$WALLET_NAME" ] || [ -z "$VALIDATOR_ADDRESS" ]; then
-  echo "❌ Необходимые переменные не загружены. Пожалуйста, сначала запустите start.sh и setup_validator.sh."
+  echo "❌ Необходимые переменные не загружены. Пожалуйста, сначала запустите setup_per.sh."
   exit 1
 fi
 
@@ -26,13 +36,13 @@ while true; do
   case $choice in
     1)
       echo "💰 Забрать комиссии и реварды валидатора"
-      printf "%s" "$KEYRING_PASSWORD" | 0gchaind tx distribution withdraw-rewards "$VALIDATOR_ADDRESS" \
+      echo "$KEYRING_PASSWORD" | 0gchaind tx distribution withdraw-rewards "$VALIDATOR_ADDRESS" \
         --chain-id="zgtendermint_16600-2" \
         --from "$WALLET_NAME" \
         --commission \
         --gas=auto \
         --gas-prices=0.003ua0gi \
-        --gas-adjustment=1.4 \
+        --gas-adjustment=1.8 \
         -y
       ;;
     2)
@@ -47,22 +57,22 @@ while true; do
       echo "🗳 Голосование по пропозалу"
       read -p "Введите номер пропозала: " proposal
       read -p "Введите ваш голос (yes/no/abstain/no_with_veto): " vote
-      printf "%s" "$KEYRING_PASSWORD" | 0gchaind tx gov vote "$proposal" "$vote" \
+      echo "$KEYRING_PASSWORD" | 0gchaind tx gov vote "$proposal" "$vote" \
         --from "$WALLET_NAME" \
         --chain-id="zgtendermint_16600-2" \
         --gas=auto \
         --gas-prices=0.003ua0gi \
-        --gas-adjustment=1.3 \
+        --gas-adjustment=1.8 \
         -y
       ;;
     5)
       echo "🚪 Вызволить из тюрьмы"
-      printf "%s" "$KEYRING_PASSWORD" | 0gchaind tx slashing unjail \
+      echo "$KEYRING_PASSWORD" | 0gchaind tx slashing unjail \
         --from "$WALLET_NAME" \
         --chain-id="zgtendermint_16600-2" \
         --gas=auto \
         --gas-prices=0.003ua0gi \
-        --gas-adjustment=1.6 \
+        --gas-adjustment=1.8 \
         -y
       ;;
     6)
