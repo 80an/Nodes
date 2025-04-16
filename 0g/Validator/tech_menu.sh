@@ -65,7 +65,7 @@ update_program() {
 delete_program() {
   echo "🧹 Удаление программы..."
   stop_monitoring
-  rm -rf "$PROGRAM_DIR" "$CONFIG_DIR"
+  rm -rf "$HOME/0g" "$CONFIG_DIR"
   rm -f "$HOME/bin/validator"
   sed -i '/export PATH="\$HOME\/bin:\$PATH"/d' "$HOME/.bashrc"
   echo "✅ Программа и все её данные удалены."
