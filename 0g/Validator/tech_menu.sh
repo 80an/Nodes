@@ -26,16 +26,14 @@ stop_monitoring() {
 }
 
 ensure_bin_in_path() {
-  if ! grep -Fxq "export PATH=\"$HOME/bin:\$PATH\"" "$HOME/.bashrc"; then
-    echo "export PATH=\"$HOME/bin:\$PATH\"" >> "$HOME/.bashrc"
-    echo "hash -r" >> "$HOME/.bashrc"
+   if ! grep -Fxq 'export PATH="$HOME/bin:$PATH"' "$HOME/.bashrc"; then
+    echo 'export PATH="$HOME/bin:$PATH"' >> "$HOME/.bashrc"
     export PATH="$HOME/bin:$PATH"
-    hash -r
     echo "✅ Путь ~/bin добавлен в .bashrc и активирован."
   else
     export PATH="$HOME/bin:$PATH"
-    hash -r
   fi
+  hash -r
 }
 
 run_setup() {
@@ -88,8 +86,7 @@ delete_program() {
   rm -rf "$HOME/0g" "$CONFIG_DIR"
   rm -f "$HOME/bin/validator"
   # sed -i '/export PATH="\$HOME\/bin:\$PATH"/d' "$HOME/.bashrc"
-  sed -i '/export PATH=\\"\$HOME\/bin:\$PATH\\"/d' "$HOME/.bashrc"
-  sed -i '/hash -r/d' "$HOME/.bashrc"
+  sed -i '/export PATH="$HOME\/bin:$PATH"/d' "$HOME/.bashrc"
   echo "✅ Программа и все её данные удалены."
 }
 
