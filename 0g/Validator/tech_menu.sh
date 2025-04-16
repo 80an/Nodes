@@ -28,10 +28,13 @@ stop_monitoring() {
 ensure_bin_in_path() {
   if ! grep -Fxq "export PATH=\"$HOME/bin:\$PATH\"" "$HOME/.bashrc"; then
     echo "export PATH=\"$HOME/bin:\$PATH\"" >> "$HOME/.bashrc"
+    echo "hash -r" >> "$HOME/.bashrc"
     export PATH="$HOME/bin:$PATH"
+    hash -r
     echo "✅ Путь ~/bin добавлен в .bashrc и активирован."
   else
     export PATH="$HOME/bin:$PATH"
+    hash -r
   fi
 }
 
