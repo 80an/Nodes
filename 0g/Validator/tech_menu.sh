@@ -27,6 +27,9 @@ stop_monitoring() {
 
 run_setup() {
   bash "$PROGRAM_DIR/setup_per.sh"
+  # Добавил запуск
+  echo "🚀 Запуск основного меню..."
+  exec bash "$PROGRAM_DIR/menu_validator.sh"
 }
 
 install_program() {
@@ -85,12 +88,15 @@ while true; do
   case $choice in
     1)
       install_program
+      break
       ;;
     2)
       update_program
+      break
       ;;
     3)
       delete_program
+      break
       ;;
     4)
       echo "👋 Возврат в консоль."
