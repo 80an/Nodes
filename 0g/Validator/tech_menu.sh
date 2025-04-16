@@ -36,7 +36,7 @@ install_program() {
   rm -rf "$PROGRAM_DIR"
   mkdir -p "$HOME/0g"
   git clone --depth=1 https://github.com/80an/Nodes "$NODES_REPO_DIR"
-  cp -r "$NODES_REPO_DIR/0g/Validator" "$PROGRAM_DIR"
+  rsync -a --exclude='tech_menu.sh' "$NODES_REPO_DIR/0g/Validator/" "$PROGRAM_DIR/"
   run_setup
 }
 
@@ -46,7 +46,7 @@ update_program() {
   rm -rf "$PROGRAM_DIR"
   mkdir -p "$HOME/0g"
   git clone --depth=1 https://github.com/80an/Nodes "$NODES_REPO_DIR"
-  cp -r "$NODES_REPO_DIR/0g/Validator" "$PROGRAM_DIR"
+  rsync -a --exclude='tech_menu.sh' "$NODES_REPO_DIR/0g/Validator/" "$PROGRAM_DIR/"
   run_setup
 }
 
@@ -85,11 +85,15 @@ while true; do
       ;;
     4)
       echo "👋 Возврат в консоль."
-      exit 0
+      break
       ;;
     *)
       echo "❌ Неверный выбор. Попробуйте снова."
       ;;
+  esac
+
+done
+
   esac
 
 done
