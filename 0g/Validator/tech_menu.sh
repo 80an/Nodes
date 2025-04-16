@@ -25,6 +25,16 @@ stop_monitoring() {
   fi
 }
 
+ensure_bin_in_path() {
+  if ! grep -Fxq "export PATH=\"$HOME/bin:\$PATH\"" "$HOME/.bashrc"; then
+    echo "export PATH=\"$HOME/bin:\$PATH\"" >> "$HOME/.bashrc"
+    export PATH="$HOME/bin:$PATH"
+    echo "✅ Путь ~/bin добавлен в .bashrc и активирован."
+  else
+    export PATH="$HOME/bin:$PATH"
+  fi
+}
+
 run_setup() {
   bash "$PROGRAM_DIR/setup_per.sh"
   # Добавил запуск
@@ -45,6 +55,7 @@ install_program() {
   rsync -a --exclude='tech_menu.sh' --exclude='README.md' "$TMP_DIR/0g/Validator/" "$PROGRAM_DIR/"
   rm -rf "$TMP_DIR"
 
+  ensure_bin_in_path
   run_setup
 }
 
@@ -60,6 +71,7 @@ update_program() {
   rsync -a --exclude='tech_menu.sh' --exclude='README.md' "$TMP_DIR/0g/Validator/" "$PROGRAM_DIR/"
   rm -rf "$TMP_DIR"
 
+  ensure_bin_in_path
   run_setup
 }
 
@@ -68,7 +80,8 @@ delete_program() {
   stop_monitoring
   rm -rf "$HOME/0g" "$CONFIG_DIR"
   rm -f "$HOME/bin/validator"
-  sed -i '/export PATH="\$HOME\/bin:\$PATH"/d' "$HOME/.bashrc"
+  # sed -i '/export PATH="\$HOME\/bin:\$PATH"/d' "$HOME/.bashrc"
+  sed -i '/export PATH=\\"\$HOME\/bin:\$PATH\\"/d' "$HOME/.bashrc"
   echo "✅ Программа и все её данные удалены."
 }
 
