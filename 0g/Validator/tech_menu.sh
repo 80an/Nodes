@@ -4,7 +4,6 @@ CONFIG_DIR="$HOME/.validator_config"
 ENV_FILE="$CONFIG_DIR/env"
 MONITOR_PIDS_FILE="$CONFIG_DIR/monitor_pids"
 PROGRAM_DIR="$HOME/0g/Validator"
-NODES_REPO_DIR="$HOME/0g/Nodes"
 
 mkdir -p "$CONFIG_DIR"
 
@@ -35,8 +34,13 @@ install_program() {
   stop_monitoring
   rm -rf "$PROGRAM_DIR"
   mkdir -p "$HOME/0g"
-  git clone --depth=1 https://github.com/80an/Nodes "$NODES_REPO_DIR"
-  rsync -a --exclude='tech_menu.sh' --exclude='README.md' "$NODES_REPO_DIR/0g/Validator/" "$PROGRAM_DIR/"
+
+  TMP_DIR=$(mktemp -d)
+  git clone --depth=1 https://github.com/80an/Nodes "$TMP_DIR"
+
+  rsync -a --exclude='tech_menu.sh' --exclude='README.md' "$TMP_DIR/0g/Validator/" "$PROGRAM_DIR/"
+  rm -rf "$TMP_DIR"
+
   run_setup
 }
 
@@ -45,8 +49,13 @@ update_program() {
   stop_monitoring
   rm -rf "$PROGRAM_DIR"
   mkdir -p "$HOME/0g"
-  git clone --depth=1 https://github.com/80an/Nodes "$NODES_REPO_DIR"
-  rsync -a --exclude='tech_menu.sh' --exclude='README.md' "$NODES_REPO_DIR/0g/Validator/" "$PROGRAM_DIR/"
+
+  TMP_DIR=$(mktemp -d)
+  git clone --depth=1 https://github.com/80an/Nodes "$TMP_DIR"
+
+  rsync -a --exclude='tech_menu.sh' --exclude='README.md' "$TMP_DIR/0g/Validator/" "$PROGRAM_DIR/"
+  rm -rf "$TMP_DIR"
+
   run_setup
 }
 
