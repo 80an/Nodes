@@ -27,14 +27,25 @@ stop_monitoring() {
 
 ensure_bin_in_path() {
    # if ! grep -Fxq 'export PATH="$HOME/bin:$PATH"' "$HOME/.bashrc"; then
-   if ! grep -q 'export PATH=.*\$HOME/bin' "$HOME/.bashrc"; then
-    echo 'export PATH="$HOME/bin:$PATH"' >> "$HOME/.bashrc"
+  # if ! grep -q 'export PATH=.*\$HOME/bin' "$HOME/.bashrc"; then
+   # echo 'export PATH="$HOME/bin:$PATH"' >> "$HOME/.bashrc"
     # export PATH="$HOME/bin:$PATH"
     # echo "✅ Путь ~/bin добавлен в .bashrc и активирован."
  # else
     # export PATH="$HOME/bin:$PATH"
+
+  local bashrc="$HOME/.bashrc"
+  local profile="$HOME/.profile"
+
+  if ! grep -q 'export PATH="$HOME/bin:$PATH"' "$bashrc"; then
+    echo 'export PATH="$HOME/bin:$PATH"' >> "$bashrc"
     echo "✅ Путь ~/bin добавлен в .bashrc."
   fi
+  if ! grep -q 'export PATH="$HOME/bin:$PATH"' "$profile"; then
+    echo 'export PATH="$HOME/bin:$PATH"' >> "$profile"
+    echo "✅ Путь ~/bin добавлен в .profile."
+  fi
+
   export PATH="$HOME/bin:$PATH"
   hash -r
 }
@@ -90,6 +101,7 @@ delete_program() {
   rm -f "$HOME/bin/validator"
   # sed -i '/export PATH="\$HOME\/bin:\$PATH"/d' "$HOME/.bashrc"
   sed -i '/export PATH="$HOME\/bin:$PATH"/d' "$HOME/.bashrc"
+  sed -i '/export PATH="$HOME\/bin:$PATH"/d' "$HOME/.profile"
   echo "✅ Программа и все её данные удалены."
 }
 
