@@ -26,13 +26,16 @@ stop_monitoring() {
 }
 
 ensure_bin_in_path() {
-   if ! grep -Fxq 'export PATH="$HOME/bin:$PATH"' "$HOME/.bashrc"; then
+   # if ! grep -Fxq 'export PATH="$HOME/bin:$PATH"' "$HOME/.bashrc"; then
+   if ! grep -q 'export PATH=.*\$HOME/bin' "$HOME/.bashrc"; then
     echo 'export PATH="$HOME/bin:$PATH"' >> "$HOME/.bashrc"
-    export PATH="$HOME/bin:$PATH"
-    echo "✅ Путь ~/bin добавлен в .bashrc и активирован."
-  else
-    export PATH="$HOME/bin:$PATH"
+    # export PATH="$HOME/bin:$PATH"
+    # echo "✅ Путь ~/bin добавлен в .bashrc и активирован."
+ # else
+    # export PATH="$HOME/bin:$PATH"
+    echo "✅ Путь ~/bin добавлен в .bashrc."
   fi
+  export PATH="$HOME/bin:$PATH"
   hash -r
 }
 
