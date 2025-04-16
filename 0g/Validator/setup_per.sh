@@ -53,7 +53,8 @@ chmod +x "$HOME/bin/validator"
 # Добавляем ~/bin в PATH, если ещё не добавлен
 PROFILE_FILE="$HOME/.bashrc"
 if ! grep -q 'export PATH="\$HOME/bin:\$PATH"' "$PROFILE_FILE"; then
-  echo 'export PATH="$HOME/bin:$PATH"' >> "$PROFILE_FILE"
+  echo "export PATH=$HOME/bin:\$PATH" >> "$PROFILE_FILE"
+  # echo 'export PATH="$HOME/bin:$PATH"' >> "$PROFILE_FILE"
   export PATH="$HOME/bin:$PATH"
   echo "✅ Путь ~/bin добавлен в .bashrc и активирован."
 else
