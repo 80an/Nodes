@@ -89,6 +89,7 @@ delete_program() {
   rm -f "$HOME/bin/validator"
   # sed -i '/export PATH="\$HOME\/bin:\$PATH"/d' "$HOME/.bashrc"
   sed -i '/export PATH=\\"\$HOME\/bin:\$PATH\\"/d' "$HOME/.bashrc"
+  sed -i '/hash -r/d' "$HOME/.bashrc"
   echo "✅ Программа и все её данные удалены."
 }
 
