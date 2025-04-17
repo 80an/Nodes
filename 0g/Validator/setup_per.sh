@@ -50,17 +50,6 @@ source "\$HOME/0g/Validator/menu_validator.sh"
 EOF
 chmod +x "$HOME/bin/validator"
 
-# Добавляем ~/bin в PATH, если ещё не добавлен
-PROFILE_FILE="$HOME/.bashrc"
-if ! grep -q 'export PATH="\$HOME/bin:\$PATH"' "$PROFILE_FILE"; then
-  echo "export PATH=$HOME/bin:\$PATH" >> "$PROFILE_FILE"
-  # echo 'export PATH="$HOME/bin:$PATH"' >> "$PROFILE_FILE"
-  export PATH="$HOME/bin:$PATH"
-  echo "✅ Путь ~/bin добавлен в .bashrc и активирован."
-else
-  export PATH="$HOME/bin:$PATH"
-fi
-
 echo ""
 echo "✅ Настройка завершена."
 echo "Теперь вы можете запускать меню в любой момент командой:"
