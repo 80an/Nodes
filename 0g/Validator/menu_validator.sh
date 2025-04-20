@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Подгрузка переменных
+source ~/.validator_config/env
+
 # Проверка, что все необходимые переменные загружены
 if [ -z "$KEYRING_PASSWORD" ] || [ -z "$WALLET_NAME" ] || [ -z "$VALIDATOR_ADDRESS" ]; then
   echo "❌ Необходимые переменные не загружены. Пожалуйста, сначала запустите setup_per.sh."
