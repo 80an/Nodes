@@ -31,7 +31,7 @@ VALIDATOR_ADDRESS=$(echo "$KEYRING_PASSWORD" | xargs -0 printf "%s" | 0gchaind k
 echo "💾 Сохраняем переменные..."
 mkdir -p ~/.validator_config
 cat > ~/.validator_config/env <<EOF
-KEYRING_PASSWORD='$"$KEYRING_PASSWORD"'
+KEYRING_PASSWORD='$KEYRING_PASSWORD'
 WALLET_NAME='$WALLET_NAME'
 WALLET_ADDRESS='$WALLET_ADDRESS'
 VALIDATOR_ADDRESS='$VALIDATOR_ADDRESS'
