@@ -31,7 +31,7 @@ while true; do
   case $choice in
     1)
       echo "💰 Забрать комиссии и реварды валидатора"
-      echo '$KEYRING_PASSWORD' | 0gchaind tx distribution withdraw-rewards "$VALIDATOR_ADDRESS" \
+      echo "$KEYRING_PASSWORD" | 0gchaind tx distribution withdraw-rewards "$VALIDATOR_ADDRESS" \
         --chain-id="zgtendermint_16600-2" \
         --from "$WALLET_NAME" \
         --commission \
