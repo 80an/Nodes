@@ -1,35 +1,33 @@
 #!/bin/bash
 
-# Скрипт для настройки переменных и запуска основного меню
-
 echo "🔧 Запуск настройки валидатора..."
 
-# Запрос пароля keyring
+# Подгружаем .bash_profile для получения WALLET_NAME и прочих переменных
+PROFILE_FILE="$HOME/.bash_profile"
+if [ -f "$PROFILE_FILE" ]; then
+  source "$PROFILE_FILE"
+  echo "✅ Загружены переменные из $PROFILE_FILE"
+else
+  echo "❌ Файл $PROFILE_FILE не найден. Убедитесь, что он существует."
+  exit 1
+fi
+
+# Проверяем наличие переменной WALLET_NAME
+if [ -z "$WALLET_NAME" ]; then
+  echo "❌ Переменная WALLET_NAME не задана в $PROFILE_FILE"
+  exit 1
+fi
+
+# Запрашиваем пароль keyring
 echo
 read -sp "Введите пароль keyring: " KEYRING_PASSWORD
 echo
 
-# Выбор способа ввода
-echo "Выберите, что вводить:"
-echo "1) Имя кошелька"
-echo "2) Адрес кошелька"
-read -p "Что выбираете? (1 или 2): " choice
-
-if [ "$choice" -eq 1 ]; then
-  read -p "Введите имя кошелька: " WALLET_NAME
-  WALLET_ADDRESS=$(echo "$KEYRING_PASSWORD" | xargs -0 printf "%s" | 0gchaind keys show "$WALLET_NAME" --bech acc -a)
-elif [ "$choice" -eq 2 ]; then
-  read -p "Введите адрес кошелька: " WALLET_ADDRESS
-  WALLET_NAME=$(echo "$KEYRING_PASSWORD" | xargs -0 printf "%s" | 0gchaind keys show "$WALLET_ADDRESS" --output json | jq -r '.name')
-else
-  echo "❌ Неверный выбор. Пожалуйста, выберите 1 или 2."
-  exit 1
-fi
-
-# Вычисляем адрес валидатора
+# Получаем адреса по WALLET_NAME
+WALLET_ADDRESS=$(echo "$KEYRING_PASSWORD" | xargs -0 printf "%s" | 0gchaind keys show "$WALLET_NAME" --bech acc -a)
 VALIDATOR_ADDRESS=$(echo "$KEYRING_PASSWORD" | xargs -0 printf "%s" | 0gchaind keys show "$WALLET_NAME" --bech val -a)
 
-# Сохраняем переменные в файл (экранируем спецсимволы)
+# Сохраняем переменные в отдельный конфиг-файл
 echo "💾 Сохраняем переменные..."
 mkdir -p ~/.validator_config
 cat > ~/.validator_config/env <<EOF
@@ -39,10 +37,21 @@ WALLET_ADDRESS='$WALLET_ADDRESS'
 VALIDATOR_ADDRESS='$VALIDATOR_ADDRESS'
 EOF
 
-# Создаём команду для запуска основного меню
+# Подключаем env в .bash_profile (если ещё не подключён)
+if ! grep -q "source ~/.validator_config/env" "$PROFILE_FILE"; then
+  echo 'source ~/.validator_config/env' >> "$PROFILE_FILE"
+  echo "✅ Добавлен source ~/.validator_config/env в $PROFILE_FILE"
+else
+  echo "ℹ️ Файл env уже подгружается из $PROFILE_FILE"
+fi
+
+# Подгружаем в текущую сессию
+source ~/.validator_config/env
+echo "🔁 Переменные окружения применены в текущей сессии."
+
+# Создаём alias-обёртку validator
 echo ""
 echo "🚀 Создаём команду 'validator' для быстрого запуска меню..."
-
 mkdir -p "$HOME/bin"
 cat > "$HOME/bin/validator" <<EOF
 #!/bin/bash
