@@ -78,8 +78,13 @@ while true; do
         mkdir -p "$HOME/.validator_config"
         echo "TELEGRAM_BOT_TOKEN=\"$TELEGRAM_BOT_TOKEN\"" >> "$HOME/.validator_config/env"
         echo "TELEGRAM_CHAT_ID=\"$TELEGRAM_CHAT_ID\"" >> "$HOME/.validator_config/env"
-        export TELEGRAM_BOT_TOKEN TELEGRAM_CHAT_ID
+    
+        # 🔄 Перезагрузка переменных
+        set -o allexport
+        source "$HOME/.validator_config/env"
+        set +o allexport
       fi
+
 
       while true; do
         echo
