@@ -97,13 +97,13 @@ while true; do
         case $subchoice in
           1)
             echo "▶️ Включаем мониторинг валидатора..."
-            nohup bash "$HOME/.validator_config/monitoring_validator.sh" > /dev/null 2>&1 &
+            nohup bash "$HOME/0g/Validator/Monitoring/monitoring_validator.sh" > /dev/null 2>&1 &
             echo $! > "$MONITOR_PID_FILE"
             echo "✅ Мониторинг запущен. PID сохранён в $MONITOR_PID_FILE"
             ;;
           2)
             echo "▶️ Включаем мониторинг пропозалов..."
-            nohup bash "$HOME/.validator_config/monitoring_proposals.sh" > /dev/null 2>&1 &
+            nohup bash "$HOME/0g/Validator/Monitoring/monitoring_proposals.sh" > /dev/null 2>&1 &
             echo $! > "$PROPOSAL_PID_FILE"
             echo "✅ Мониторинг запущен. PID сохранён в $PROPOSAL_PID_FILE"
             ;;
