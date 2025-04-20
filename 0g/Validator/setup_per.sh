@@ -31,10 +31,10 @@ VALIDATOR_ADDRESS=$(echo "$KEYRING_PASSWORD" | xargs -0 printf "%s" | 0gchaind k
 echo "💾 Сохраняем переменные..."
 mkdir -p ~/.validator_config
 cat > ~/.validator_config/env <<EOF
-KEYRING_PASSWORD='$KEYRING_PASSWORD'
-WALLET_NAME='$WALLET_NAME'
-WALLET_ADDRESS='$WALLET_ADDRESS'
-VALIDATOR_ADDRESS='$VALIDATOR_ADDRESS'
+export KEYRING_PASSWORD='$KEYRING_PASSWORD'
+export WALLET_NAME='$WALLET_NAME'
+export WALLET_ADDRESS='$WALLET_ADDRESS'
+export VALIDATOR_ADDRESS='$VALIDATOR_ADDRESS'
 EOF
 
 # Подключаем env в .bash_profile (если ещё не подключён)
