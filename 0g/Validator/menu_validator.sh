@@ -1,10 +1,19 @@
 #!/bin/bash
 
-# Подгрузка переменных
-source ~/.validator_config/env
+ENV_FILE="$HOME/.validator_config/env"
 
-# Проверка, что все необходимые переменные загружены
-if [ -z "$KEYRING_PASSWORD" ] || [ -z "$WALLET_NAME" ] || [ -z "$VALIDATOR_ADDRESS" ]; then
+# Подгрузка переменных окружения
+if [ -f "$ENV_FILE" ]; then
+  set -o allexport
+  source "$ENV_FILE"
+  set +o allexport
+else
+  echo "❌ Не найден файл $ENV_FILE. Пожалуйста, сначала запустите setup_per.sh."
+  exit 1
+fi
+
+# Проверка основных переменных
+if [[ -z "${KEYRING_PASSWORD// }" || -z "${WALLET_NAME// }" || -z "${VALIDATOR_ADDRESS// }" ]]; then
   echo "❌ Необходимые переменные не загружены. Пожалуйста, сначала запустите setup_per.sh."
   exit 1
 fi
@@ -12,7 +21,6 @@ fi
 MONITOR_PID_FILE="$HOME/.validator_config/monitor_validator.pid"
 PROPOSAL_PID_FILE="$HOME/.validator_config/monitor_proposals.pid"
 
-# Меню для управления валидатором
 while true; do
   echo
   echo "========= 📋 Меню управления валидатором ========="
@@ -71,21 +79,36 @@ while true; do
         -y
       ;;
     6)
-      if [ -z "$TELEGRAM_BOT_TOKEN" ] || [ -z "$TELEGRAM_CHAT_ID" ]; then
-        echo "🤖 Введите параметры Telegram-бота для мониторинга:"
-        read -p "🔑 Telegram Bot Token: " TELEGRAM_BOT_TOKEN
-        read -p "💬 Telegram Chat ID: " TELEGRAM_CHAT_ID
-        mkdir -p "$HOME/.validator_config"
-        echo "TELEGRAM_BOT_TOKEN=\"$TELEGRAM_BOT_TOKEN\"" >> "$HOME/.validator_config/env"
-        echo "TELEGRAM_CHAT_ID=\"$TELEGRAM_CHAT_ID\"" >> "$HOME/.validator_config/env"
-    
-        # 🔄 Перезагрузка переменных
+      # Повторная подгрузка переменных в случае изменений
+      if [ -f "$ENV_FILE" ]; then
         set -o allexport
-        source "$HOME/.validator_config/env"
+        source "$ENV_FILE"
         set +o allexport
       fi
 
+      # Проверка и запрос недостающих переменных
+      if [[ -z "${TELEGRAM_BOT_TOKEN// }" || -z "${TELEGRAM_CHAT_ID// }" ]]; then
+        echo "🤖 Введите параметры Telegram-бота для мониторинга:"
+        read -p "🔑 Telegram Bot Token: " TELEGRAM_BOT_TOKEN
+        read -p "💬 Telegram Chat ID: " TELEGRAM_CHAT_ID
 
+        mkdir -p "$HOME/.validator_config"
+
+        # Очистка старых значений
+        sed -i '/^TELEGRAM_BOT_TOKEN=/d' "$ENV_FILE"
+        sed -i '/^TELEGRAM_CHAT_ID=/d' "$ENV_FILE"
+
+        # Запись новых
+        echo "TELEGRAM_BOT_TOKEN=\"$TELEGRAM_BOT_TOKEN\"" >> "$ENV_FILE"
+        echo "TELEGRAM_CHAT_ID=\"$TELEGRAM_CHAT_ID\"" >> "$ENV_FILE"
+
+        # Подгружаем в текущую сессию
+        set -o allexport
+        source "$ENV_FILE"
+        set +o allexport
+      fi
+
+      # Подменю мониторинга
       while true; do
         echo
         echo "========= 📡 Подменю мониторинга ========="
@@ -96,7 +119,6 @@ while true; do
         echo "5) ⏹ Отключить мониторинг пропозалов"
         echo "6) 🔙 Вернуться в главное меню"
         echo "=========================================="
-
         read -p "Выберите действие (1-6): " subchoice
 
         case $subchoice in
@@ -180,5 +202,4 @@ while true; do
       echo "🚫 Неверный выбор, пожалуйста, выберите пункт от 1 до 7."
       ;;
   esac
-
 done
