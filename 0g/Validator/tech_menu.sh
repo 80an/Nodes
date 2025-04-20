@@ -5,13 +5,32 @@ ENV_FILE="$CONFIG_DIR/env"
 MONITOR_PIDS_FILE="$CONFIG_DIR/monitor_pids"
 PROGRAM_DIR="$HOME/0g/Validator"
 LOG_FILE="$CONFIG_DIR/install.log"
+PROFILE_FILE="$HOME/.bash_profile"
 
 mkdir -p "$CONFIG_DIR"
 
-# === Функции ===
+# === Вспомогательные функции ===
 
 log() {
   echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
+}
+
+add_to_profile_if_missing() {
+  local line="$1"
+  if ! grep -Fxq "$line" "$PROFILE_FILE"; then
+    echo "$line" >> "$PROFILE_FILE"
+    log "✅ Добавлена строка в .bash_profile: $line"
+  else
+    log "ℹ️ Уже присутствует в .bash_profile: $line"
+  fi
+}
+
+remove_from_profile() {
+  local pattern="$1"
+  if grep -Eq "$pattern" "$PROFILE_FILE"; then
+    sed -i "/$pattern/d" "$PROFILE_FILE"
+    log "🧹 Удалена строка из .bash_profile по шаблону: $pattern"
+  fi
 }
 
 stop_monitoring() {
@@ -30,34 +49,10 @@ stop_monitoring() {
   fi
 }
 
-ensure_bin_in_path() {
-  local bashrc="$HOME/.bashrc"
-  local profile="$HOME/.profile"
-
-  for file in "$bashrc" "$profile"; do
-    if ! grep -q 'export PATH="$HOME/bin:$PATH"' "$file"; then
-      echo 'export PATH="$HOME/bin:$PATH"' >> "$file"
-      log "✅ Путь ~/bin добавлен в $file."
-    else
-      log "ℹ️ Путь ~/bin уже присутствует в $file."
-    fi
-
-    if [ "$file" = "$profile" ]; then
-      if grep -q 'source ~/.bashrc' "$file"; then
-        log "ℹ️ .bashrc уже подгружается из $file."
-      else
-        echo 'source ~/.bashrc' >> "$file"
-        log "✅ Добавлен source ~/.bashrc в $file."
-      fi
-    fi
-
-    if ! grep -q "source $ENV_FILE" "$file"; then
-      echo "source $ENV_FILE" >> "$file"
-      log "✅ Добавлен source $ENV_FILE в $file."
-    else
-      log "ℹ️ $ENV_FILE уже подгружается из $file."
-    fi
-  done
+ensure_profile_setup() {
+  add_to_profile_if_missing 'export PATH="$HOME/bin:$PATH"'
+  [ -f "$HOME/.bashrc" ] && add_to_profile_if_missing 'source ~/.bashrc'
+  add_to_profile_if_missing "source $ENV_FILE"
 
   export PATH="$HOME/bin:$PATH"
   hash -r
@@ -82,7 +77,7 @@ install_program() {
   rsync -a --exclude='tech_menu.sh' --exclude='README.md' "$TMP_DIR/0g/Validator/" "$PROGRAM_DIR/" | tee -a "$LOG_FILE"
   rm -rf "$TMP_DIR"
 
-  ensure_bin_in_path
+  ensure_profile_setup
   run_setup
 }
 
@@ -98,17 +93,21 @@ update_program() {
   rsync -a --exclude='tech_menu.sh' --exclude='README.md' "$TMP_DIR/0g/Validator/" "$PROGRAM_DIR/" | tee -a "$LOG_FILE"
   rm -rf "$TMP_DIR"
 
-  ensure_bin_in_path
+  ensure_profile_setup
   run_setup
 }
 
 delete_program() {
   log "🧹 Удаление программы..."
   stop_monitoring
+
+  remove_from_profile 'export PATH="\$HOME/bin:\$PATH"'
+  remove_from_profile 'source ~/.validator_config/env'
+  remove_from_profile 'source ~/.bashrc'
+
   rm -rf "$HOME/0g" "$CONFIG_DIR"
   rm -f "$HOME/bin/validator"
-  sed -i '/export PATH="$HOME\/bin:$PATH"/d' "$HOME/.bashrc"
-  sed -i '/export PATH="$HOME\/bin:$PATH"/d' "$HOME/.profile"
+
   log "✅ Программа и все её данные удалены."
 }
 
@@ -147,5 +146,4 @@ while true; do
       echo "❌ Неверный выбор. Попробуйте снова."
       ;;
   esac
-
 done
