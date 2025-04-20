@@ -9,28 +9,10 @@ PROFILE_FILE="$HOME/.bash_profile"
 
 mkdir -p "$CONFIG_DIR"
 
-# === Вспомогательные функции ===
+# === Функции ===
 
 log() {
   echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
-}
-
-add_to_profile_if_missing() {
-  local line="$1"
-  if ! grep -Fxq "$line" "$PROFILE_FILE"; then
-    echo "$line" >> "$PROFILE_FILE"
-    log "✅ Добавлена строка в .bash_profile: $line"
-  else
-    log "ℹ️ Уже присутствует в .bash_profile: $line"
-  fi
-}
-
-remove_from_profile() {
-  local pattern="$1"
-  if grep -Eq "$pattern" "$PROFILE_FILE"; then
-    sed -i "/$pattern/d" "$PROFILE_FILE"
-    log "🧹 Удалена строка из .bash_profile по шаблону: $pattern"
-  fi
 }
 
 stop_monitoring() {
@@ -49,14 +31,41 @@ stop_monitoring() {
   fi
 }
 
-ensure_profile_setup() {
-  add_to_profile_if_missing 'export PATH="$HOME/bin:$PATH"'
-  [ -f "$HOME/.bashrc" ] && add_to_profile_if_missing 'source ~/.bashrc'
-  add_to_profile_if_missing "source $ENV_FILE"
+ensure_bin_in_path() {
+  if ! grep -q 'export PATH="$HOME/bin:$PATH"' "$PROFILE_FILE"; then
+    echo 'export PATH="$HOME/bin:$PATH"' >> "$PROFILE_FILE"
+    log "✅ Добавлен export PATH в $PROFILE_FILE."
+  else
+    log "ℹ️ export PATH уже присутствует в $PROFILE_FILE."
+  fi
+
+  if ! grep -q "source $ENV_FILE" "$PROFILE_FILE"; then
+    echo "source $ENV_FILE" >> "$PROFILE_FILE"
+    log "✅ Добавлен source $ENV_FILE в $PROFILE_FILE."
+  else
+    log "ℹ️ source $ENV_FILE уже присутствует в $PROFILE_FILE."
+  fi
+
+  if ! grep -q 'source ~/.bashrc' "$PROFILE_FILE"; then
+    echo 'source ~/.bashrc' >> "$PROFILE_FILE"
+    log "✅ Добавлен source ~/.bashrc в $PROFILE_FILE."
+  else
+    log "ℹ️ source ~/.bashrc уже присутствует в $PROFILE_FILE."
+  fi
 
   export PATH="$HOME/bin:$PATH"
   hash -r
   log "🔁 Обновлён PATH и сброшен кэш команд."
+}
+
+remove_from_profile() {
+  local pattern="$1"
+  if grep -qF "$pattern" "$PROFILE_FILE"; then
+    sed -i "\|$pattern|d" "$PROFILE_FILE"
+    log "🧹 Удалена строка из .bash_profile по шаблону: $pattern"
+  else
+    log "ℹ️ Шаблон не найден в .bash_profile: $pattern"
+  fi
 }
 
 run_setup() {
@@ -77,7 +86,7 @@ install_program() {
   rsync -a --exclude='tech_menu.sh' --exclude='README.md' "$TMP_DIR/0g/Validator/" "$PROGRAM_DIR/" | tee -a "$LOG_FILE"
   rm -rf "$TMP_DIR"
 
-  ensure_profile_setup
+  ensure_bin_in_path
   run_setup
 }
 
@@ -93,7 +102,7 @@ update_program() {
   rsync -a --exclude='tech_menu.sh' --exclude='README.md' "$TMP_DIR/0g/Validator/" "$PROGRAM_DIR/" | tee -a "$LOG_FILE"
   rm -rf "$TMP_DIR"
 
-  ensure_profile_setup
+  ensure_bin_in_path
   run_setup
 }
 
@@ -101,12 +110,17 @@ delete_program() {
   log "🧹 Удаление программы..."
   stop_monitoring
 
-  remove_from_profile 'export PATH="\$HOME/bin:\$PATH"'
+  # Удаляем строки из .bash_profile
+  remove_from_profile 'export PATH="$HOME/bin:$PATH"'
   remove_from_profile 'source ~/.validator_config/env'
   remove_from_profile 'source ~/.bashrc'
 
-  rm -rf "$HOME/0g" "$CONFIG_DIR"
-  rm -f "$HOME/bin/validator"
+  # Удаляем директории и файл запуска
+  rm -rf "$HOME/0g"
+  rm -f "$HOME/bin/validator" && log "🗑️ Удалён скрипт запуска validator"
+  rmdir "$HOME/bin" 2>/dev/null && log "🧹 Удалена пустая директория ~/bin"
+
+  rm -rf "$CONFIG_DIR"
 
   log "✅ Программа и все её данные удалены."
 }
@@ -146,4 +160,6 @@ while true; do
       echo "❌ Неверный выбор. Попробуйте снова."
       ;;
   esac
+
 done
+
