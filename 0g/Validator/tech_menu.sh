@@ -110,16 +110,19 @@ delete_program() {
   log "🧹 Удаление программы..."
   stop_monitoring
 
+  # Удаляем строки из .bash_profile
   remove_from_profile 'export PATH="$HOME/bin:$PATH"'
   remove_from_profile 'source ~/.validator_config/env'
   remove_from_profile 'source ~/.bashrc'
 
+  # Удаляем директории и файл запуска
   rm -rf "$HOME/0g"
-  rm -f "$HOME/bin/validator"
-
-  log "✅ Программа и все её данные удалены."
+  rm -f "$HOME/bin/validator" && log "🗑️ Удалён скрипт запуска validator"
+  rmdir "$HOME/bin" 2>/dev/null && log "🧹 Удалена пустая директория ~/bin"
 
   rm -rf "$CONFIG_DIR"
+
+  log "✅ Программа и все её данные удалены."
 }
 
 # === Меню ===
