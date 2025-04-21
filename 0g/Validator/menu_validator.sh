@@ -79,8 +79,15 @@ while true; do
         -y
       ;;
     6)
-       
+        # Повторная подгрузка переменных в случае изменений
+      if [ -f "$ENV_FILE" ]; then
+        set -o allexport
+        source "$ENV_FILE"
+        set +o allexport
+      fi
+
       # Проверка и запрос недостающих переменных Telegram
+      if [ -z "${TELEGRAM_BOT_TOKEN+x}" ] || [ -z "${TELEGRAM_CHAT_ID+x}" ] || [ -z "${TELEGRAM_BOT_TOKEN// }" ] || [ -z "${TELEGRAM_CHAT_ID// }" ]; then
         echo "🤖 Введите параметры Telegram-бота для мониторинга:"
         read -p "🔑 Telegram Bot Token: " TELEGRAM_BOT_TOKEN
         read -p "💬 Telegram Chat ID: " TELEGRAM_CHAT_ID
