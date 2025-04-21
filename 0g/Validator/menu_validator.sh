@@ -122,17 +122,30 @@ while true; do
         read -p "Выберите действие (1-6): " subchoice
 
         case $subchoice in
-          1)
+         1)
             echo "▶️ Включаем мониторинг валидатора..."
             nohup bash "$HOME/0g/Validator/Monitoring/monitoring_validator.sh" > /dev/null 2>&1 &
-            echo $! > "$MONITOR_PID_FILE"
-            echo "✅ Мониторинг запущен. PID сохранён в $MONITOR_PID_FILE"
+            MONITOR_PID=$!
+            sleep 1  # даём немного времени процессу стартануть
+            if ps -p "$MONITOR_PID" > /dev/null 2>&1; then
+              echo "$MONITOR_PID" > "$MONITOR_PID_FILE"
+              echo "✅ Мониторинг запущен. PID сохранён в $MONITOR_PID_FILE"
+            else
+              echo "❌ Ошибка запуска мониторинга. Проверь переменные окружения или логи."
+            fi
             ;;
-          2)
+
+         2)
             echo "▶️ Включаем мониторинг пропозалов..."
             nohup bash "$HOME/0g/Validator/Monitoring/monitoring_proposals.sh" > /dev/null 2>&1 &
-            echo $! > "$PROPOSAL_PID_FILE"
-            echo "✅ Мониторинг запущен. PID сохранён в $PROPOSAL_PID_FILE"
+            PROPOSAL_PID=$!
+            sleep 1
+            if ps -p "$PROPOSAL_PID" > /dev/null 2>&1; then
+              echo "$PROPOSAL_PID" > "$PROPOSAL_PID_FILE"
+              echo "✅ Мониторинг запущен. PID сохранён в $PROPOSAL_PID_FILE"
+            else
+              echo "❌ Ошибка запуска мониторинга пропозалов. Проверь переменные окружения или логи."
+            fi
             ;;
           3)
             echo "📊 Проверяем статус мониторинга..."
