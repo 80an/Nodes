@@ -50,11 +50,11 @@ while true; do
       ;;
     2)
       echo "💸 Забрать все реварды со всех кошельков"
-      source "$HOME/.validator_config/all_reward.sh"
+      source "$HOME/0g/Validator/all_reward.sh"
       ;;
     3)
       echo "📥 Делегировать со всех кошельков в своего валидатора"
-      source "$HOME/.validator_config/all_delegation.sh"
+      source "$HOME/0g/Validator/all_delegation.sh"
       ;;
     4)
       echo "🗳 Голосование по пропозалу"
