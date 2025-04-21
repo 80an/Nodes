@@ -1,8 +1,6 @@
 #!/bin/bash
 
-# === Цвета ===
-B_GREEN="\e[32m"
-B_YELLOW="\e[33m"
+# === Цвета для вывода (можно убрать, если не нужно в Telegram) ===
 B_RED="\e[31m"
 NO_COLOR="\e[0m"
 
@@ -18,9 +16,38 @@ else
 fi
 
 # === Проверка обязательных переменных ===
-if [ -z "$VALIDATOR_ADDRESS" ] || [ -z "$TELEGRAM_BOT_TOKEN" ] || [ -z "$TELEGRAM_CHAT_ID" ] || [ -z "$RPC_URL" ]; then
+if [ -z "$VALIDATOR_ADDRESS" ] || [ -z "$TELEGRAM_BOT_TOKEN" ] || [ -z "$TELEGRAM_CHAT_ID" ]; then
   echo -e "${B_RED}❌ Не все обязательные переменные заданы в $ENV_FILE${NO_COLOR}"
   exit 1
+fi
+
+# === RPC ===
+RPC_URL_1="https://og-t-rpc.noders.services"
+RPC_URL_2="https://og-testnet-rpc.itrocket.net"
+
+select_working_rpc() {
+  for url in "$RPC_URL_1" "$RPC_URL_2"; do
+    if curl -s --max-time 3 "$url/status" | grep -q '"latest_block_height"'; then
+      echo "$url"
+      return
+    fi
+  done
+  echo ""
+}
+
+RPC_URL=$(select_working_rpc)
+if [ -z "$RPC_URL" ]; then
+  echo -e "${B_RED}❌ Нет доступного RPC. Проверь подключения.${NO_COLOR}"
+  curl -s -X POST "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendMessage" \
+       -d chat_id="$TELEGRAM_CHAT_ID" \
+       -d parse_mode="HTML" \
+       -d text="❌ Нет доступного RPC. Мониторинг не запущен." > /dev/null
+  exit 1
+else
+  curl -s -X POST "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendMessage" \
+       -d chat_id="$TELEGRAM_CHAT_ID" \
+       -d parse_mode="HTML" \
+       -d text="📡 Используется RPC: <code>$RPC_URL</code>" > /dev/null
 fi
 
 # === Telegram уведомление ===
@@ -73,6 +100,7 @@ send_telegram_alert "$message"
 last_jail_status="$initial_jailed"
 last_stake="$initial_stake"
 last_jail_alert_ts=0
+zero_lag_counter=0
 
 while true; do
   jailed=$(get_jailed_status)
@@ -80,12 +108,31 @@ while true; do
   missed=$(get_missed_blocks)
   now_ts=$(date +%s)
 
+  local_height=$(get_local_height)
+  remote_height=$(get_latest_height)
+
+  # === Проверка лагов ===
+  if [[ "$local_height" =~ ^[0-9]+$ ]] && [[ "$remote_height" =~ ^[0-9]+$ ]]; then
+    lag=$((remote_height - local_height))
+
+    if [ "$lag" -lt 0 ]; then
+      send_telegram_alert "⚠️ Отставание стало отрицательным (lag=$lag). Возможна ошибка RPC или узла."
+    elif [ "$lag" -eq 0 ]; then
+      zero_lag_counter=$((zero_lag_counter + 1))
+      if [ "$zero_lag_counter" -ge 3 ]; then
+        send_telegram_alert "❗️ Node и RPC на одной высоте ($remote_height), но блоки не растут!"
+        zero_lag_counter=0
+      fi
+    else
+      zero_lag_counter=0
+    fi
+  else
+    send_telegram_alert "❌ Ошибка получения высот. local=$local_height, remote=$remote_height"
+  fi
+
   # === Jail ===
   if [ "$jailed" = "true" ]; then
     if [ $((now_ts - last_jail_alert_ts)) -ge 10800 ]; then
-      local_height=$(get_local_height)
-      remote_height=$(get_latest_height)
-      lag=$((remote_height - local_height))
       [ "$lag" -lt 0 ] && lag="❌ Ошибка RPC, отставание < 0"
 
       message=$(cat <<EOF
@@ -100,7 +147,6 @@ EOF
     stake_diff=$((stake - last_stake))
     stake_rounded=$((stake / 1000000))
     sign=$( [ "$stake_diff" -gt 0 ] && echo "+$((stake_diff / 1000000)) 🟢⬆️" || echo "$((stake_diff / 1000000)) 🔴⬇️" )
-    lag=$(( $(get_latest_height) - $(get_local_height) ))
 
     message=$(cat <<EOF
 ✅ <b>Валидатор вышел из тюрьмы!</b>
