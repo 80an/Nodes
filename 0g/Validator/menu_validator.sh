@@ -80,25 +80,28 @@ while true; do
       ;;
     6)
        
-      # Проверка и запрос недостающих переменных Telegram
-        echo "🤖 Введите параметры Telegram-бота для мониторинга:"
+           # Проверка наличия переменных Telegram
+      if [[ -z "${TELEGRAM_BOT_TOKEN// }" || -z "${TELEGRAM_CHAT_ID// }" ]]; then
+        echo "🤖 Параметры Telegram-бота не найдены. Пожалуйста, введите:"
         read -p "🔑 Telegram Bot Token: " TELEGRAM_BOT_TOKEN
         read -p "💬 Telegram Chat ID: " TELEGRAM_CHAT_ID
-
+      
         mkdir -p "$HOME/.validator_config"
-
+      
         # Очистка старых значений
         sed -i '/^TELEGRAM_BOT_TOKEN=/d' "$ENV_FILE"
         sed -i '/^TELEGRAM_CHAT_ID=/d' "$ENV_FILE"
-
+      
         # Запись новых
         echo "TELEGRAM_BOT_TOKEN=\"$TELEGRAM_BOT_TOKEN\"" >> "$ENV_FILE"
         echo "TELEGRAM_CHAT_ID=\"$TELEGRAM_CHAT_ID\"" >> "$ENV_FILE"
+      fi
+      
+      # Подгружаем переменные Telegram (независимо от того, были ли они или только что заданы)
+      set -o allexport
+      source "$ENV_FILE"
+      set +o allexport
 
-        # Подгружаем в текущую сессию
-        set -o allexport
-        source "$ENV_FILE"
-        set +o allexport
       
       # Подменю мониторинга
       while true; do
