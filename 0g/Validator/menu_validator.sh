@@ -87,7 +87,7 @@ while true; do
       fi
 
       # Проверка и запрос недостающих переменных Telegram
-      if [[ -z "${TELEGRAM_BOT_TOKEN// }" || -z "${TELEGRAM_CHAT_ID// }" ]]; then
+      if [ -z "${TELEGRAM_BOT_TOKEN+x}" ] || [ -z "${TELEGRAM_CHAT_ID+x}" ] || [ -z "${TELEGRAM_BOT_TOKEN// }" ] || [ -z "${TELEGRAM_CHAT_ID// }" ]; then
         echo "🤖 Введите параметры Telegram-бота для мониторинга:"
         read -p "🔑 Telegram Bot Token: " TELEGRAM_BOT_TOKEN
         read -p "💬 Telegram Chat ID: " TELEGRAM_CHAT_ID
