@@ -124,6 +124,34 @@ while true; do
         case $subchoice in
          1)
             echo "▶️ Включаем мониторинг валидатора..."
+            # 🔁 Повторная подгрузка переменных
+            if [ -f "$ENV_FILE" ]; then
+              set -o allexport
+              source "$ENV_FILE"
+              set +o allexport
+            fi
+          
+            # 🔐 Проверка параметров Telegram
+            if [[ -z "${TELEGRAM_BOT_TOKEN// }" || -z "${TELEGRAM_CHAT_ID// }" ]]; then
+              echo "🤖 Не заданы параметры Telegram-бота. Введите заново:"
+              read -p "🔑 Telegram Bot Token: " TELEGRAM_BOT_TOKEN
+              read -p "💬 Telegram Chat ID: " TELEGRAM_CHAT_ID
+          
+              # Очистка старых значений
+              sed -i '/^TELEGRAM_BOT_TOKEN=/d' "$ENV_FILE"
+              sed -i '/^TELEGRAM_CHAT_ID=/d' "$ENV_FILE"
+          
+              # Запись новых
+              echo "TELEGRAM_BOT_TOKEN=\"$TELEGRAM_BOT_TOKEN\"" >> "$ENV_FILE"
+              echo "TELEGRAM_CHAT_ID=\"$TELEGRAM_CHAT_ID\"" >> "$ENV_FILE"
+          
+              # Подгружаем заново
+              set -o allexport
+              source "$ENV_FILE"
+              set +o allexport
+            fi
+
+            # ▶️ Запуск мониторинга
             nohup bash "$HOME/0g/Validator/Monitoring/monitoring_validator.sh" > /dev/null 2>&1 &
             MONITOR_PID=$!
             sleep 1  # даём немного времени процессу стартануть
