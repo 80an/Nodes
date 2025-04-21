@@ -1,10 +1,10 @@
 #!/bin/bash
 
-# === Цвета для вывода (можно убрать, если не нужно в Telegram) ===
+# === Цвета для ошибок в терминале (используется только при отладке) ===
 B_RED="\e[31m"
 NO_COLOR="\e[0m"
 
-# === Загрузка переменных ===
+# === Загрузка переменных окружения из ~/.validator_config/env ===
 ENV_FILE="$HOME/.validator_config/env"
 if [ -f "$ENV_FILE" ]; then
   set -o allexport
@@ -21,12 +21,18 @@ if [ -z "$VALIDATOR_ADDRESS" ] || [ -z "$TELEGRAM_BOT_TOKEN" ] || [ -z "$TELEGRA
   exit 1
 fi
 
-# === RPC ===
-RPC_URL_1="https://og-t-rpc.noders.services"
-RPC_URL_2="https://og-testnet-rpc.itrocket.net"
+# === Определение локального RPC-порта из config.toml ===
+PROJECT_DIR=".0gchain"
+RPC_PORT=$(grep -m 1 -oP '^laddr = "\K[^"]+' "$HOME/$PROJECT_DIR/config/config.toml" | cut -d ':' -f 3)
+LOCAL_RPC="http://localhost:$RPC_PORT"
 
+# === Список удалённых RPC — сначала noders, затем itrocket ===
+REMOTE_RPC_1="https://og-t-rpc.noders.services"
+REMOTE_RPC_2="https://og-testnet-rpc.itrocket.net"
+
+# === Функция выбора рабочего RPC (возвращает первый, который отвечает) ===
 select_working_rpc() {
-  for url in "$RPC_URL_1" "$RPC_URL_2"; do
+  for url in "$REMOTE_RPC_1" "$REMOTE_RPC_2"; do
     if curl -s --max-time 3 "$url/status" | grep -q '"latest_block_height"'; then
       echo "$url"
       return
@@ -35,22 +41,24 @@ select_working_rpc() {
   echo ""
 }
 
-RPC_URL=$(select_working_rpc)
-if [ -z "$RPC_URL" ]; then
-  echo -e "${B_RED}❌ Нет доступного RPC. Проверь подключения.${NO_COLOR}"
+# === Выбор рабочего удалённого RPC ===
+REMOTE_RPC=$(select_working_rpc)
+if [ -z "$REMOTE_RPC" ]; then
+  # Если ни один RPC не отвечает — отправка сообщения и выход
   curl -s -X POST "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendMessage" \
        -d chat_id="$TELEGRAM_CHAT_ID" \
        -d parse_mode="HTML" \
        -d text="❌ Нет доступного RPC. Мониторинг не запущен." > /dev/null
   exit 1
 else
+  # Уведомление об использовании конкретного RPC
   curl -s -X POST "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendMessage" \
        -d chat_id="$TELEGRAM_CHAT_ID" \
        -d parse_mode="HTML" \
-       -d text="📡 Используется RPC: <code>$RPC_URL</code>" > /dev/null
+       -d text="📡 Используется RPC: <code>$REMOTE_RPC</code>" > /dev/null
 fi
 
-# === Telegram уведомление ===
+# === Универсальная функция отправки сообщений в Telegram ===
 send_telegram_alert() {
   local message="$1"
   curl -s -X POST "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendMessage" \
@@ -59,7 +67,7 @@ send_telegram_alert() {
        -d text="$message" > /dev/null
 }
 
-# === Получение данных ===
+# === Функции получения данных о валидаторе ===
 get_stake() {
   0gchaind q staking validator "$VALIDATOR_ADDRESS" --output json | jq -r '.tokens | tonumber'
 }
@@ -72,15 +80,16 @@ get_jailed_status() {
   0gchaind q staking validator "$VALIDATOR_ADDRESS" --output json | jq -r '.jailed'
 }
 
-get_latest_height() {
-  curl -s "$RPC_URL/status" | jq -r '.result.sync_info.latest_block_height'
-}
-
+# === Получение высот из локального и удалённого RPC ===
 get_local_height() {
-  0gchaind status 2>/dev/null | jq -r '.SyncInfo.latest_block_height'
+  curl -s "$LOCAL_RPC/status" | jq -r '.result.sync_info.latest_block_height'
 }
 
-# === Стартовое уведомление ===
+get_remote_height() {
+  curl -s "$REMOTE_RPC/status" | jq -r '.result.sync_info.latest_block_height'
+}
+
+# === Стартовое уведомление при запуске мониторинга ===
 initial_jailed=$(get_jailed_status)
 initial_stake=$(get_stake)
 initial_missed=$(get_missed_blocks)
@@ -96,12 +105,13 @@ EOF
 )
 send_telegram_alert "$message"
 
-# === Цикл мониторинга ===
+# === Инициализация переменных для отслеживания изменений ===
 last_jail_status="$initial_jailed"
 last_stake="$initial_stake"
 last_jail_alert_ts=0
 zero_lag_counter=0
 
+# === Главный цикл мониторинга ===
 while true; do
   jailed=$(get_jailed_status)
   stake=$(get_stake)
@@ -109,7 +119,7 @@ while true; do
   now_ts=$(date +%s)
 
   local_height=$(get_local_height)
-  remote_height=$(get_latest_height)
+  remote_height=$(get_remote_height)
 
   # === Проверка лагов ===
   if [[ "$local_height" =~ ^[0-9]+$ ]] && [[ "$remote_height" =~ ^[0-9]+$ ]]; then
@@ -127,10 +137,11 @@ while true; do
       zero_lag_counter=0
     fi
   else
+    # === Ошибка получения высот ===
     send_telegram_alert "❌ Ошибка получения высот. local=$local_height, remote=$remote_height"
   fi
 
-  # === Jail ===
+  # === Проверка Jail ===
   if [ "$jailed" = "true" ]; then
     if [ $((now_ts - last_jail_alert_ts)) -ge 10800 ]; then
       [ "$lag" -lt 0 ] && lag="❌ Ошибка RPC, отставание < 0"
@@ -144,6 +155,7 @@ EOF
       last_jail_alert_ts=$now_ts
     fi
   elif [ "$last_jail_status" = "true" ] && [ "$jailed" = "false" ]; then
+    # === Валидатор вышел из тюрьмы ===
     stake_diff=$((stake - last_stake))
     stake_rounded=$((stake / 1000000))
     sign=$( [ "$stake_diff" -gt 0 ] && echo "+$((stake_diff / 1000000)) 🟢⬆️" || echo "$((stake_diff / 1000000)) 🔴⬇️" )
@@ -161,7 +173,7 @@ EOF
   last_jail_status="$jailed"
   last_stake="$stake"
 
-  # === Проверка корректности данных ===
+  # === Проверка получения счетчика пропущенных блоков ===
   if [[ ! "$missed" =~ ^[0-9]+$ ]]; then
     send_telegram_alert "<b>❗️ Ошибка получения missed_blocks_counter</b>%0AВозможно, RPC не отвечает."
   fi
