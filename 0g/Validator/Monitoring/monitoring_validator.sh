@@ -95,14 +95,23 @@ initial_stake=$(get_stake)
 initial_missed=$(get_missed_blocks)
 initial_pid=$$
 
+# === Формирование строки пропущенных блоков, если не в тюрьме ===
+if [ "$initial_jailed" = "false" ]; then
+  missed_line="📉 Пропущено блоков: $initial_missed"
+else
+  missed_line=""
+fi
+
+# === Стартовое уведомление ===
 message=$(cat <<EOF
 <b>📡 Мониторинг валидатора запущен</b>
 🔢 PID: $initial_pid
 🚦 Jail: $initial_jailed
 💰 Стейк: $((initial_stake / 1000000))
-📉 Пропущено блоков: $initial_missed
+$missed_line
 EOF
 )
+
 send_telegram_alert "$message"
 
 # === Инициализация переменных для отслеживания изменений ===
