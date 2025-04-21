@@ -79,8 +79,11 @@ while true; do
         -y
       ;;
     6)
-       
-           # Проверка наличия переменных Telegram
+       # Проверка наличия и непустых значений переменных Telegram в env-файле
+        TELEGRAM_BOT_TOKEN_IN_FILE=$(grep '^TELEGRAM_BOT_TOKEN=' "$ENV_FILE" | cut -d'=' -f2- | tr -d '"')
+        TELEGRAM_CHAT_ID_IN_FILE=$(grep '^TELEGRAM_CHAT_ID=' "$ENV_FILE" | cut -d'=' -f2- | tr -d '"')
+          
+       # Проверка наличия переменных Telegram
       if [[ -z "${TELEGRAM_BOT_TOKEN// }" || -z "${TELEGRAM_CHAT_ID// }" ]]; then
         echo "🤖 Параметры Telegram-бота не найдены. Пожалуйста, введите:"
         read -p "🔑 Telegram Bot Token: " TELEGRAM_BOT_TOKEN
