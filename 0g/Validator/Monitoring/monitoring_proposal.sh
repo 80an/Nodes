@@ -4,19 +4,20 @@ ENV_FILE="$HOME/.validator_config/env"
 PROPOSAL_CACHE="$HOME/.0g_known_proposals"
 REMINDER_LOG="$HOME/.0g_proposal_reminders"
 
-# Загрузка переменных окружения
+# === Загрузка переменных окружения из ~/.validator_config/env ===
+ENV_FILE="$HOME/.validator_config/env"
 if [ -f "$ENV_FILE" ]; then
   set -o allexport
   source "$ENV_FILE"
   set +o allexport
 else
-  echo "❌ Не найден файл переменных $ENV_FILE"
+  echo -e "${B_RED}❌ Не найден файл с переменными: $ENV_FILE${NO_COLOR}"
   exit 1
 fi
 
-# Проверка наличия Telegram переменных
+# === Проверка обязательных переменных ===
 if [ -z "$TELEGRAM_BOT_TOKEN" ] || [ -z "$TELEGRAM_CHAT_ID" ]; then
-  echo "❌ Переменные Telegram не заданы. Пожалуйста, настройте их в $ENV_FILE"
+  echo -e "${B_RED}❌ Не все обязательные переменные заданы в $ENV_FILE${NO_COLOR}"
   exit 1
 fi
 
