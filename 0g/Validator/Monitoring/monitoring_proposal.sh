@@ -71,7 +71,7 @@ if [ "$total_proposals" -gt 0 ]; then
   description=$(extract_description "$proposal_json")
   msk_time=$(to_msk "$voting_end")
 
-  # Отправляем стартовое сообщение
+  # Отправляем стартовое сообщение, если голосование активно
   if [ "$status" == "PROPOSAL_STATUS_VOTING_PERIOD" ]; then
     msg=$(cat <<EOF
 <b>📢 Текущее голосование №$latest_id</b>
@@ -117,8 +117,8 @@ while true; do
     description=$(extract_description "$prop")
     msk_time=$(to_msk "$voting_end")
 
-    # Новое предложение
-    if ! grep -q "^$id$" "$PROPOSAL_CACHE"; then
+    # Новое предложение (только если оно еще не зарегистрировано и активно)
+    if ! grep -q "^$id$" "$PROPOSAL_CACHE" && [ "$status" == "PROPOSAL_STATUS_VOTING_PERIOD" ]; then
       echo "$id" >> "$PROPOSAL_CACHE"  # Добавляем новое предложение в файл
       msg=$(cat <<EOF
 <b>📢 Новый пропозал №$id</b>
@@ -165,3 +165,4 @@ EOF
 
   sleep 300
 done
+
