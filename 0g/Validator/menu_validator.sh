@@ -58,10 +58,10 @@ while true; do
       ;;
     4)
             # === Проверка на текущие активные голосования в периоде депозита ===
-      active_proposals=$(0gchaind query gov proposals --status deposit_period --output json | jq -r '.proposals[]' 2>/dev/null)
+      active_proposals=$(0gchaind q gov proposals --status voting_period --output json 2>/dev/null || echo '{"proposals": []}' | jq '.proposals | length')
       
-      # Проверяем, есть ли активные голосования
-      if [ -z "$active_proposals" ]; then
+      # Если активных предложений нет (значение 0), выходим в основное меню
+      if [ "$active_proposals" -eq 0 ]; then
         echo -e "❌ В данный момент нет активных голосований!"
         break # Возврат в главное меню
       fi
