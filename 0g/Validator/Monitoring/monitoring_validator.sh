@@ -118,7 +118,9 @@ send_telegram_alert "$message"
 last_jail_status="$initial_jailed"
 last_stake="$initial_stake"
 last_jail_alert_ts=0
-zero_lag_counter=0
+
+prev_local_height=$(get_local_height)
+prev_remote_height=$(get_remote_height)
 
 # === Главный цикл мониторинга ===
 while true; do
@@ -127,27 +129,22 @@ while true; do
   missed=$(get_missed_blocks)
   now_ts=$(date +%s)
 
-  local_height=$(get_local_height)
-  remote_height=$(get_remote_height)
+  current_local_height=$(get_local_height)
+  current_remote_height=$(get_remote_height)
 
   # === Проверка лагов ===
-  if [[ "$local_height" =~ ^[0-9]+$ ]] && [[ "$remote_height" =~ ^[0-9]+$ ]]; then
-    lag=$((remote_height - local_height))
+  if [[ "$current_local_height" =~ ^[0-9]+$ ]] && [[ "$current_remote_height" =~ ^[0-9]+$ ]] && \
+     [[ "$prev_local_height" =~ ^[0-9]+$ ]] && [[ "$prev_remote_height" =~ ^[0-9]+$ ]]; then
 
-    if [ "$lag" -lt 0 ]; then
-      send_telegram_alert "⚠️ Отставание стало отрицательным (lag=$lag). Возможна ошибка RPC или узла."
-    elif [ "$lag" -eq 0 ]; then
-      zero_lag_counter=$((zero_lag_counter + 1))
-      if [ "$zero_lag_counter" -ge 3 ]; then
-        send_telegram_alert "❗️ Node и RPC на одной высоте ($remote_height), но блоки не растут!"
-        zero_lag_counter=0
-      fi
-    else
-      zero_lag_counter=0
+    delta_local=$((current_local_height - prev_local_height))
+    delta_remote=$((current_remote_height - prev_remote_height))
+    lag=$((current_remote_height - current_local_height))
+
+    if [ "$delta_local" -eq 0 ] && [ "$delta_remote" -ge 10 ]; then
+      send_telegram_alert "❗️ <b>Локальная нода замерла</b>\nВысота не изменилась: <code>$current_local_height</code>\nУдалённый RPC вырос: <code>$delta_remote</code> блоков"
     fi
   else
-    # === Ошибка получения высот ===
-    send_telegram_alert "❌ Ошибка получения высот. local=$local_height, remote=$remote_height"
+    send_telegram_alert "❌ Ошибка получения высот. local=$current_local_height, remote=$current_remote_height"
   fi
 
   # === Проверка Jail ===
@@ -186,6 +183,9 @@ EOF
   if [[ ! "$missed" =~ ^[0-9]+$ ]]; then
     send_telegram_alert "<b>❗️ Ошибка получения missed_blocks_counter</b>%0AВозможно, RPC не отвечает."
   fi
+  # Обновляем высоты
+    prev_local_height="$current_local_height"
+    prev_remote_height="$current_remote_height"
 
   sleep 300
 done
