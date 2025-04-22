@@ -58,17 +58,22 @@ touch "$PROPOSAL_CACHE" "$REMINDER_LOG"
 
 proposals_json=$(0gchaind q gov proposals --output json)
 current_proposals=$(echo "$proposals_json" | jq -c '.proposals[]')
-found_current=false
 latest_id=""
 latest_end=""
+has_active=false
 
-echo "$current_proposals" | while IFS= read -r prop; do
+for prop in $current_proposals; do
   id=$(echo "$prop" | jq -r '.id')
   status=$(echo "$prop" | jq -r '.status')
+  voting_end=$(echo "$prop" | jq -r '.voting_end_time')
 
-  if [ "$status" == "PROPOSAL_STATUS_VOTING_PERIOD" ]; then
-    found_current=true
-    voting_end=$(echo "$prop" | jq -r '.voting_end_time')
+  if [[ -z "$latest_id" || "$id" -gt "$latest_id" ]]; then
+    latest_id="$id"
+    latest_end="$voting_end"
+  fi
+
+  if [ "$status" == "PROPOSAL_STATUS_VOTING_PERIOD" ] && [ "$has_active" == false ]; then
+    has_active=true
     title=$(extract_title "$prop")
     description=$(extract_description "$prop")
     msk_time=$(to_msk "$voting_end")
@@ -87,14 +92,9 @@ EOF
 )
     send_telegram_alert "$msg"
   fi
-
-  if [[ -z "$latest_id" || "$id" -gt "$latest_id" ]]; then
-    latest_id="$id"
-    latest_end=$(echo "$prop" | jq -r '.voting_end_time')
-  fi
 done
 
-if [ "$found_current" = false ]; then
+if [ "$has_active" == false ]; then
   msk_end=$(to_msk "$latest_end")
   msg=$(cat <<EOF
 <b>📊 Текущих голосований нет.</b>
@@ -102,7 +102,7 @@ if [ "$found_current" = false ]; then
 Последнее голосование: №<b>$latest_id</b>
 <b>📅 Завершено:</b> <code>$msk_end</code>
 
-📉 Проголосовать не нужно, но следите за новыми предложениями!
+📉 Голосовать не нужно, но следите за новыми пропозалами!
 EOF
 )
   send_telegram_alert "$msg"
