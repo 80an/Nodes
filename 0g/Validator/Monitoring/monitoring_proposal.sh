@@ -56,30 +56,25 @@ touch "$PROPOSAL_CACHE" "$REMINDER_LOG"
 
 # === Стартовая проверка ===
 
-proposals_json=$(0gchaind q gov proposals --output json)
-current_proposals=$(echo "$proposals_json" | jq -c '.proposals[]')
-latest_id=""
-latest_end=""
-has_active=false
+# Получаем общее количество предложений
+total_proposals=$(0gchaind q gov proposals --count-total --output json | jq -r '.pagination.total')
 
-for prop in $current_proposals; do
-  id=$(echo "$prop" | jq -r '.id')
-  status=$(echo "$prop" | jq -r '.status')
-  voting_end=$(echo "$prop" | jq -r '.voting_end_time')
+if [ "$total_proposals" -gt 0 ]; then
+  # Получаем последний пропозал по ID
+  latest_id="$total_proposals"
+  proposal_json=$(0gchaind query gov proposal "$latest_id" --output json)
 
-  if [[ -z "$latest_id" || "$id" -gt "$latest_id" ]]; then
-    latest_id="$id"
-    latest_end="$voting_end"
-  fi
+  # Извлекаем информацию о последнем пропозале
+  status=$(echo "$proposal_json" | jq -r '.status')
+  voting_end=$(echo "$proposal_json" | jq -r '.voting_end_time')
+  title=$(extract_title "$proposal_json")
+  description=$(extract_description "$proposal_json")
+  msk_time=$(to_msk "$voting_end")
 
-  if [ "$status" == "PROPOSAL_STATUS_VOTING_PERIOD" ] && [ "$has_active" == false ]; then
-    has_active=true
-    title=$(extract_title "$prop")
-    description=$(extract_description "$prop")
-    msk_time=$(to_msk "$voting_end")
-
+  # Отправляем стартовое сообщение
+  if [ "$status" == "PROPOSAL_STATUS_VOTING_PERIOD" ]; then
     msg=$(cat <<EOF
-<b>📢 Текущее голосование №$id</b>
+<b>📢 Текущее голосование №$latest_id</b>
 
 <b>📝 Название:</b> $title
 <b>📄 Описание:</b> $description
@@ -91,12 +86,9 @@ for prop in $current_proposals; do
 EOF
 )
     send_telegram_alert "$msg"
-  fi
-done
-
-if [ "$has_active" == false ]; then
-  msk_end=$(to_msk "$latest_end")
-  msg=$(cat <<EOF
+  else
+    msk_end=$(to_msk "$voting_end")
+    msg=$(cat <<EOF
 <b>📊 Текущих голосований нет.</b>
 
 Последнее голосование: №<b>$latest_id</b>
@@ -105,7 +97,10 @@ if [ "$has_active" == false ]; then
 📉 Голосовать не нужно, но следите за новыми пропозалами!
 EOF
 )
-  send_telegram_alert "$msg"
+    send_telegram_alert "$msg"
+  fi
+else
+  echo -e "${B_RED}❌ Нет предложений для обработки.${NO_COLOR}"
 fi
 
 # === Основной цикл мониторинга ===
@@ -124,7 +119,7 @@ while true; do
 
     # Новое предложение
     if ! grep -q "^$id$" "$PROPOSAL_CACHE"; then
-      echo "$id" >> "$PROPOSAL_CACHE"
+      echo "$id" >> "$PROPOSAL_CACHE"  # Добавляем новое предложение в файл
       msg=$(cat <<EOF
 <b>📢 Новый пропозал №$id</b>
 
@@ -163,7 +158,7 @@ $msg_time
 EOF
 )
         send_telegram_alert "$msg"
-        echo "$label" >> "$REMINDER_LOG"
+        echo "$label" >> "$REMINDER_LOG"  # Добавляем метку напоминания в файл
       fi
     done
   done
