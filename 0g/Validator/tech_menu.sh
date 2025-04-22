@@ -1,7 +1,12 @@
 #!/bin/bash
 
+# Берем цвета
+source <(wget -qO- 'https://raw.githubusercontent.com/CBzeek/Nodes/refs/heads/main/!tools/bash-colors.sh')
+
 # Готовим сервер
 source <(wget -qO- 'https://raw.githubusercontent.com/80an/Nodes/refs/heads/main/!tools/server_prepare.sh')
+sleep 5
+clear
 
 CONFIG_DIR="$HOME/.validator_config"
 ENV_FILE="$CONFIG_DIR/env"
@@ -120,15 +125,18 @@ delete_program() {
 
 while true; do
   echo ""
-  echo "🛠️  Техническое меню"
-  echo "=============================="
+  echo -e "${B_YELLOW}   🛠️  Техническое меню${NO_COLOR}"
+  echo -e "${B_GREEN}==============================${NO_COLOR}"
   echo "1) 💾 Установка / обновление программы"
   echo "2) 🧹 Удалить программу полностью"
   echo "3) 🚪 Выйти в консоль"
-  echo "=============================="
-
+  echo -e "${B_GREEN}==============================${NO_COLOR}"
+  echo ""
+  
   read -p "Выберите пункт: " choice
 
+  echo ""
+  
   case $choice in
     1)
       manage_installation
