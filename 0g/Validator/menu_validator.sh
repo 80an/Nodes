@@ -57,16 +57,24 @@ while true; do
       source "$HOME/0g/Validator/all_delegation.sh"
       ;;
     4)
-      echo "🗳 Голосование по пропозалу"
-      read -p "Введите номер пропозала: " proposal
-      read -p "Введите ваш голос (yes/no/abstain/no_with_veto): " vote
-      echo "$KEYRING_PASSWORD" | 0gchaind tx gov vote "$proposal" "$vote" \
-        --from "$WALLET_NAME" \
-        --chain-id="zgtendermint_16600-2" \
-        --gas=auto \
-        --gas-prices=0.003ua0gi \
-        --gas-adjustment=1.8 \
-        -y
+            # === Проверка на текущие активные голосования в периоде депозита ===
+      active_proposals=$(0gchaind query gov proposals --status deposit_period --output json | jq -r '.proposals[]')
+      
+      # Проверяем, есть ли активные голосования
+      if [ -z "$active_proposals" ]; then
+        echo -e "❌ В данный момент нет активных голосований!"
+        exit 1  # Прекращаем выполнение, если нет активных голосований
+      fi
+        echo "🗳 Голосование по пропозалу"
+        read -p "Введите номер пропозала: " proposal
+        read -p "Введите ваш голос (yes/no/abstain/no_with_veto): " vote
+        echo "$KEYRING_PASSWORD" | 0gchaind tx gov vote "$proposal" "$vote" \
+          --from "$WALLET_NAME" \
+          --chain-id="zgtendermint_16600-2" \
+          --gas=auto \
+          --gas-prices=0.003ua0gi \
+          --gas-adjustment=1.8 \
+          -y
       ;;
     5)
       echo "🚪 Вызволить из тюрьмы"
