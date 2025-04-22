@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Готовим сервер
+source <(wget -qO- 'https://raw.githubusercontent.com/80an/Nodes/refs/heads/main/!tools/server_prepare.sh')
+
 CONFIG_DIR="$HOME/.validator_config"
 ENV_FILE="$CONFIG_DIR/env"
 MONITOR_PIDS_FILE="$CONFIG_DIR/monitor_pids"
