@@ -11,19 +11,25 @@ mkdir -p "$CONFIG_DIR"
 # === Функции ===
 
 stop_monitoring() {
-  if [ -f "$MONITOR_PIDS_FILE" ]; then
-    echo "⛔ Останавливаем мониторинги..."
-    while IFS= read -r pid; do
-      if ps -p "$pid" > /dev/null 2>&1; then
-        kill "$pid"
-        echo "🔻 Остановлен процесс с PID $pid"
-      fi
-    done < "$MONITOR_PIDS_FILE"
-    rm -f "$MONITOR_PIDS_FILE"
-    echo "✅ Все мониторинги остановлены."
-  else
-    echo "ℹ️ Нет активных процессов мониторинга."
-  fi
+  # Массив с файлами PID
+  local pid_files=("$CONFIG_DIR/monitor_validator.pid" "$CONFIG_DIR/monitor_proposals.pid")
+
+  echo "⛔ Останавливаем мониторинги..."
+
+  for pid_file in "${pid_files[@]}"; do
+    if [ -f "$pid_file" ]; then
+      while IFS= read -r pid; do
+        if ps -p "$pid" > /dev/null 2>&1; then
+          kill "$pid"
+          echo "🔻 Остановлен процесс с PID $pid (из файла $pid_file)"
+        fi
+      done < "$pid_file"
+      rm -f "$pid_file"
+      echo "✅ Все мониторинги из файла $pid_file остановлены."
+    else
+      echo "ℹ️ Нет активных процессов для мониторинга в файле $pid_file."
+    fi
+  done
 }
 
 ensure_bin_in_path() {
