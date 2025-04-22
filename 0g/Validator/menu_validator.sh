@@ -159,7 +159,7 @@ while true; do
 
          2)
             echo "▶️ Включаем мониторинг пропозалов..."
-            nohup bash "$HOME/0g/Validator/Monitoring/monitoring_proposals.sh" > /dev/null 2>&1 &
+            nohup bash "$HOME/0g/Validator/Monitoring/monitoring_proposal.sh" > /dev/null 2>&1 &
             PROPOSAL_PID=$!
             sleep 1
             if ps -p "$PROPOSAL_PID" > /dev/null 2>&1; then
