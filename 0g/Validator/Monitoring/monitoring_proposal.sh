@@ -1,11 +1,13 @@
 #!/bin/bash
 
-ENV_FILE="$HOME/.validator_config/env"
-PROPOSAL_CACHE="$HOME/.0g_known_proposals"
-REMINDER_LOG="$HOME/.0g_proposal_reminders"
+# === Цвета для ошибок в терминале (используется только при отладке) ===
+B_RED="\e[31m"
+NO_COLOR="\e[0m"
 
 # === Загрузка переменных окружения из ~/.validator_config/env ===
 ENV_FILE="$HOME/.validator_config/env"
+PROPOSAL_CACHE="$HOME/.0g_known_proposals"
+REMINDER_LOG="$HOME/.0g_proposal_reminders"
 if [ -f "$ENV_FILE" ]; then
   set -o allexport
   source "$ENV_FILE"
