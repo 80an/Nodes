@@ -61,7 +61,7 @@ while true; do
       active_proposals=$(0gchaind query gov proposals --status deposit_period --output json | jq -r '.proposals[]')
       
       # Проверяем, есть ли активные голосования
-      if [ -z "$active_proposals" ]; then
+      if [[ -z "$active_proposals" || "$(echo "$active_proposals" | jq -r '.proposals | length')" -eq 0 ]]; then
         echo -e "❌ В данный момент нет активных голосований!"
         continue # Возврат в главное меню
       fi
