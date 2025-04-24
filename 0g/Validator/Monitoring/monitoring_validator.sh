@@ -89,6 +89,15 @@ get_remote_height() {
   curl -s "$REMOTE_RPC/status" | jq -r '.result.sync_info.latest_block_height'
 }
 
+# Функция проверки статуса валидатора относительно сета
+
+is_active_validator() {
+  status=$(0gchaind q staking validator "$VALIDATOR_ADDRESS" --output json | jq -r '.status')
+  [ "$status" = "BOND_STATUS_BONDED" ]
+}
+
+
+
 # === Стартовое уведомление при запуске мониторинга ===
 initial_jailed=$(get_jailed_status)
 initial_stake=$(get_stake)
@@ -97,18 +106,22 @@ initial_pid=$$
 
 # === Формирование строки пропущенных блоков, если не в тюрьме ===
 if [ "$initial_jailed" = "false" ]; then
+  jail_line="🟢🥳 Ура! Вы на свободе, ваш статус: <b>unjailed</b>"
   missed_line="📉 Пропущено блоков: $initial_missed"
 else
+  jail_line="🔴😞 Все плохо, вы в тюрьме, примите меры, ваш статус: <b>jailed</b>"
   missed_line=""
 fi
 
 # === Стартовое уведомление ===
 message=$(cat <<EOF
 <b>📡 Мониторинг валидатора запущен</b>
-🔢 PID: $initial_pid
-🚦 Jail: $initial_jailed
-💰 Стейк: $((initial_stake / 1000000))
+<b>🔢 PID:</b> <code>$initial_pid</code>
+
+$jail_line
 $missed_line
+
+<b>💰 Стейк:</b> $((initial_stake / 1000000))
 EOF
 )
 
@@ -128,6 +141,7 @@ while true; do
   stake=$(get_stake)
   missed=$(get_missed_blocks)
   now_ts=$(date +%s)
+  was_active=$(is_active_validator && echo "true" || echo "false")
 
   current_local_height=$(get_local_height)
   current_remote_height=$(get_remote_height)
@@ -168,16 +182,43 @@ EOF
 
     message=$(cat <<EOF
 ✅ <b>Валидатор вышел из тюрьмы!</b>
-💰 Изменение стейка: $stake_rounded ($sign)
 📉 Отставание: $lag
+
+💰 Изменение стейка: $stake_rounded ($sign)
 EOF
 )
     send_telegram_alert "$message"
     last_jail_alert_ts=0
   fi
 
+    # === Уведомление об изменении стейка, если валидатор не в тюрьме ===
+    if [ "$jailed" = "false" ] && [ "$stake" -ne "$last_stake" ]; then
+      stake_diff=$((stake - last_stake))
+      stake_rounded=$((stake / 1000000))
+      sign=$( [ "$stake_diff" -gt 0 ] && echo "+$((stake_diff / 1000000)) 🟢⬆️" || echo "$((stake_diff / 1000000)) 🔴⬇️" )
+    
+      message=$(cat <<EOF
+    📈 <b>Изменение стейка</b>
+    
+    💰 Новый стейк: $stake_rounded ($sign)
+    EOF
+    )
+      send_telegram_alert "$message"
+    fi
+
   last_jail_status="$jailed"
   last_stake="$stake"
+
+  # === Проверка выпадения/возврата в активный сет ===
+is_now_active=$(is_active_validator && echo "true" || echo "false")
+
+if [ "$was_active" = "true" ] && [ "$is_now_active" = "false" ]; then
+  send_telegram_alert "⚠️ <b>Валидатор выпал из активного сета</b>"
+elif [ "$was_active" = "false" ] && [ "$is_now_active" = "true" ]; then
+  send_telegram_alert "✅ <b>Валидатор вернулся в активный сет</b>"
+fi
+
+was_active="$is_now_active"
 
   # === Проверка получения счетчика пропущенных блоков ===
   if [[ ! "$missed" =~ ^[0-9]+$ ]]; then
