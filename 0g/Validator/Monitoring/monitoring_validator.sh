@@ -197,12 +197,13 @@ EOF
       stake_rounded=$((stake / 1000000))
       sign=$( [ "$stake_diff" -gt 0 ] && echo "+$((stake_diff / 1000000)) 🟢⬆️" || echo "$((stake_diff / 1000000)) 🔴⬇️" )
     
-      message=$(cat <<EOF
-    📈 <b>Изменение стейка</b>
-    
-    💰 Новый стейк: $stake_rounded ($sign)
-    EOF
-    )
+    message=$(cat <<EOF
+📈 <b>Изменение стейка</b>
+
+💰 Новый стейк: $stake_rounded ($sign)
+EOF
+)
+
       send_telegram_alert "$message"
     fi
 
