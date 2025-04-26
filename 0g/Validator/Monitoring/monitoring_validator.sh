@@ -102,6 +102,7 @@ is_active_validator() {
 initial_jailed=$(get_jailed_status)
 initial_stake=$(get_stake)
 initial_missed=$(get_missed_blocks)
+last_missed="$initial_missed"
 initial_pid=$$
 
 # === Формирование строки пропущенных блоков, если не в тюрьме ===
@@ -140,6 +141,23 @@ while true; do
   jailed=$(get_jailed_status)
   stake=$(get_stake)
   missed=$(get_missed_blocks)
+  
+  # === Проверка роста пропущенных блоков ===
+if [[ "$missed" =~ ^[0-9]+$ ]] && [[ "$last_missed" =~ ^[0-9]+$ ]]; then
+  missed_diff=$((missed - last_missed))
+
+  if [ "$missed_diff" -ge 10 ]; then
+     message=$(cat <<EOF
+⚠️ <b>Рост пропущенных блоков!</b>
+
+➕ <b>+$missed_diff</b> блоков за 5 минут
+📊 <b>Всего пропущено:</b> <b>$missed</b>
+EOF
+)
+    send_telegram_alert "$message"
+  fi
+fi
+
   now_ts=$(date +%s)
   was_active=$(is_active_validator && echo "true" || echo "false")
 
@@ -218,6 +236,18 @@ if [ "$was_active" = "true" ] && [ "$is_now_active" = "false" ]; then
 elif [ "$was_active" = "false" ] && [ "$is_now_active" = "true" ]; then
   send_telegram_alert "✅ <b>Валидатор вернулся в активный сет</b>"
 fi
+# === Отдельная тревога, если общее количество блоков > 700 ===
+  if [ "$missed" -gt 700 ]; then
+    message=$(cat <<EOF
+🚨 <b>ВНИМАНИЕ!</b> 🚨
+
+❗️ Вы пропустили уже <b>$missed</b> блоков!
+⚡️ Срочно проверьте ноду, иначе нода окажется <b>в тюрьме</b>!
+EOF
+)
+    send_telegram_alert "$message"
+  fi
+fi
 
 was_active="$is_now_active"
 
@@ -228,6 +258,7 @@ was_active="$is_now_active"
   # Обновляем высоты
     prev_local_height="$current_local_height"
     prev_remote_height="$current_remote_height"
-
+  # обновляем переменные
+    last_missed="$missed"
   sleep 300
 done
