@@ -155,7 +155,7 @@ EOF
 )
     send_telegram_alert "$message"
   fi
-fi
+
  # === Отдельная тревога, если общее количество блоков > 700 ===
   if [ "$missed" -gt 700 ] && [ "$high_missed_alert_sent" = "false" ]; then
     message=$(cat <<EOF
@@ -173,7 +173,7 @@ EOF
   if [ "$missed" -le 700 ]; then
     high_missed_alert_sent=false
   fi
-fi
+fi # <-- Вот это закрывает самое первое if (на missed)
 
   now_ts=$(date +%s)
   was_active=$(is_active_validator && echo "true" || echo "false")
