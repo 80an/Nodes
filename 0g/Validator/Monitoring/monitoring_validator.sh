@@ -96,12 +96,11 @@ is_active_validator() {
   [ "$status" = "BOND_STATUS_BONDED" ]
 }
 
-
-
 # === Стартовое уведомление при запуске мониторинга ===
 initial_jailed=$(get_jailed_status)
 initial_stake=$(get_stake)
 initial_missed=$(get_missed_blocks)
+high_missed_alert_sent=false
 last_missed="$initial_missed"
 initial_pid=$$
 
@@ -136,7 +135,7 @@ last_jail_alert_ts=0
 prev_local_height=$(get_local_height)
 prev_remote_height=$(get_remote_height)
 
-# === Главный цикл мониторинга ===
+# ============= Главный цикл мониторинга =============
 while true; do
   jailed=$(get_jailed_status)
   stake=$(get_stake)
@@ -155,6 +154,24 @@ if [[ "$missed" =~ ^[0-9]+$ ]] && [[ "$last_missed" =~ ^[0-9]+$ ]]; then
 EOF
 )
     send_telegram_alert "$message"
+  fi
+fi
+ # === Отдельная тревога, если общее количество блоков > 700 ===
+  if [ "$missed" -gt 700 ] && [ "$high_missed_alert_sent" = "false" ]; then
+    message=$(cat <<EOF
+🚨 <b>ВНИМАНИЕ!</b> 🚨
+
+❗️ Вы пропустили уже <b>$missed</b> блоков!
+⚡️ Срочно проверьте ноду, иначе будет <b>бан</b>!
+EOF
+)
+    send_telegram_alert "$message"
+    high_missed_alert_sent=true
+  fi
+
+  # === Сброс флага, если пропущенные блоки снова ниже порога ===
+  if [ "$missed" -le 700 ]; then
+    high_missed_alert_sent=false
   fi
 fi
 
