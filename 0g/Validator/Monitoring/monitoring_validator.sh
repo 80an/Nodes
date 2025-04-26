@@ -264,7 +264,6 @@ EOF
 )
     send_telegram_alert "$message"
   fi
-fi
 
 was_active="$is_now_active"
 
