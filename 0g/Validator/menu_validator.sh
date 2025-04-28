@@ -215,6 +215,7 @@ while true; do
               PID=$(cat "$MONITOR_PID_FILE")
               if kill "$PID" > /dev/null 2>&1; then
                 echo "✅ Мониторинг остановлен."
+                sleep 5
                 rm "$MONITOR_PID_FILE"
               else
                 echo "⚠️ Не удалось завершить процесс. Возможно, он уже не существует."
@@ -229,6 +230,7 @@ while true; do
               PID=$(cat "$PROPOSAL_PID_FILE")
               if kill "$PID" > /dev/null 2>&1; then
                 echo "✅ Мониторинг пропозалов остановлен."
+                sleep 5
                 rm "$PROPOSAL_PID_FILE"
               else
                 echo "⚠️ Не удалось завершить процесс. Возможно, он уже не существует."
