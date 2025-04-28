@@ -32,6 +32,7 @@ stop_monitoring() {
           echo "🔻 Остановлен процесс с PID $pid (из файла $pid_file)"
         fi
       done < "$pid_file"
+      sleep 5
       rm -f "$pid_file"
       echo "✅ Все мониторинги из файла $pid_file остановлены."
     else
@@ -91,6 +92,7 @@ manage_installation() {
   fi
 
   stop_monitoring
+  sleep 5
   rm -rf "$PROGRAM_DIR"
   mkdir -p "$HOME/0g"
 
