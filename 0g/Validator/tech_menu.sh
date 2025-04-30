@@ -93,18 +93,38 @@ manage_installation() {
 
   stop_monitoring
   sleep 5
-  rm -rf "$PROGRAM_DIR"
-  mkdir -p "$HOME/0g"
+  rm -rf "$PROGRAM_DIR"  # Удаляем старую директорию программы
+  mkdir -p "$PROGRAM_DIR"  # Создаем новую директорию для программы
 
-  TMP_DIR=$(mktemp -d)
-  git clone --depth=1 https://github.com/80an/Nodes "$TMP_DIR"
-
-  rsync -a --exclude='tech_menu.sh' --exclude='README.md' "$TMP_DIR/0g/Validator/" "$PROGRAM_DIR/"
-  rm -rf "$TMP_DIR"
+  # Клонируем новый репозиторий в нужную директорию
+  git clone https://github.com/80an/0G_validator_management.git "$PROGRAM_DIR"  # Клонируем репозиторий напрямую в PROGRAM_DIR
 
   ensure_bin_in_path
   run_setup
 }
+
+
+#manage_installation() {
+#  if [ -d "$PROGRAM_DIR" ]; then
+#    echo "🔄 Обновление программы..."
+#  else
+#    echo "📦 Установка программы..."
+#  fi
+
+#  stop_monitoring
+#  sleep 5
+#  rm -rf "$PROGRAM_DIR"
+#  mkdir -p "$HOME/0g"
+
+#  TMP_DIR=$(mktemp -d)
+#  git clone --depth=1 https://github.com/80an/Nodes "$TMP_DIR"
+
+#  rsync -a --exclude='tech_menu.sh' --exclude='README.md' "$TMP_DIR/0g/Validator/" "$PROGRAM_DIR/"
+#  rm -rf "$TMP_DIR"
+
+#  ensure_bin_in_path
+#  run_setup
+#}
 
 delete_program() {
   echo "🧹 Удаление программы..."
