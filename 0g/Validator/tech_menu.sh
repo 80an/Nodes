@@ -13,6 +13,7 @@ ENV_FILE="$CONFIG_DIR/env"
 MONITOR_PIDS_FILE="$CONFIG_DIR/monitor_pids"
 PROGRAM_DIR="$HOME/0g/Validator"
 PROFILE_FILE="$HOME/.bash_profile"
+REPO_DIR="$HOME/0g"
 
 mkdir -p "$CONFIG_DIR"
 
@@ -97,7 +98,7 @@ manage_installation() {
   mkdir -p "$PROGRAM_DIR"  # Создаем новую директорию для программы
 
   # Клонируем новый репозиторий в нужную директорию
-  git clone https://github.com/80an/0G_validator_management.git "$PROGRAM_DIR"  # Клонируем репозиторий напрямую в PROGRAM_DIR
+  git clone https://github.com/80an/0G_validator_management.git "$REPO_DIR"  # Клонируем репозиторий напрямую в REPO_DIR
 
   ensure_bin_in_path
   run_setup
