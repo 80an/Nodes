@@ -26,25 +26,42 @@ fi
 
 # Функция проверки изменений в папке 0g/Validator на сервере и GitHub
 check_for_updates() {
-  # Переходим в директорию с программой
-  cd "$HOME/0g" || { echo "${B_RED}❌${NO_COLOR} Ошибка доступа к директории с программой"; exit 1; }
+  cd "$HOME/0g" || return
 
-  # Обновляем информацию о репозитории
-  git fetch --quiet
-
-  # Сравниваем только папку 0g/Validator
-  local changes=$(git diff --stat origin/main -- Validator)
-
-  if [ -n "$changes" ]; then
-    echo -e "${B_YELLOW}⚠️ Обнаружены изменения в папке 0g/Validator. Рекомендуется обновить программу.${NO_COLOR}"
-    echo -e "${B_YELLOW}Для этого запустите скрипт техменю${NO_COLOR}"
-    echo -e "source <(wget -qO- 'https://raw.githubusercontent.com/80an/Nodes/refs/heads/main/0g/Validator/tech_menu.sh')"
-    echo -e "${B_YELLOW}и выберите пункт меню 'Установка / обновление программы'.${NO_COLOR}"
-    sleep 10
-  else
-    echo -e "${B_GREEN}✅ Все файлы актуальны в папке 0g/Validator, изменений не обнаружено.${NO_COLOR}"
+  if git rev-parse --is-inside-work-tree &>/dev/null; then
+    git fetch origin main &>/dev/null
+    if ! git diff --quiet origin/main -- Validator; then
+      echo -e "${B_YELLOW}⚠️ Обнаружены изменения в папке 0g/Validator. Рекомендуется обновить программу.${NO_COLOR}"
+      echo -e "${B_YELLOW}Для этого запустите скрипт техменю${NO_COLOR}"
+      echo -e "source <(wget -qO- 'https://raw.githubusercontent.com/80an/Nodes/refs/heads/main/0g/Validator/tech_menu.sh')"
+      echo -e "${B_YELLOW}и выберите пункт меню 'Установка / обновление программы'.${NO_COLOR}"
+      sleep 10
+    else
+      echo -e "${B_GREEN}✅ Все файлы актуальны в папке 0g/Validator, изменений не обнаружено.${NO_COLOR}"
+    fi
   fi
 }
+
+#check_for_updates() {
+#  # Переходим в директорию с программой
+#  cd "$HOME/0g" || { echo "${B_RED}❌${NO_COLOR} Ошибка доступа к директории с программой"; exit 1; }
+
+#  # Обновляем информацию о репозитории
+#  git fetch --quiet
+
+#  # Сравниваем только папку 0g/Validator
+#  local changes=$(git diff --stat origin/main -- Validator)
+
+#  if [ -n "$changes" ]; then
+#    echo -e "${B_YELLOW}⚠️ Обнаружены изменения в папке 0g/Validator. Рекомендуется обновить программу.${NO_COLOR}"
+#    echo -e "${B_YELLOW}Для этого запустите скрипт техменю${NO_COLOR}"
+#    echo -e "source <(wget -qO- 'https://raw.githubusercontent.com/80an/Nodes/refs/heads/main/0g/Validator/tech_menu.sh')"
+#    echo -e "${B_YELLOW}и выберите пункт меню 'Установка / обновление программы'.${NO_COLOR}"
+#    sleep 10
+#  else
+#    echo -e "${B_GREEN}✅ Все файлы актуальны в папке 0g/Validator, изменений не обнаружено.${NO_COLOR}"
+#  fi
+#}
 
 # Проверка наличия обновлений перед запуском меню валидатора
 check_for_updates
