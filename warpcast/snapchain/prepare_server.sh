@@ -8,12 +8,14 @@ B_CYAN='\033[0;36m'   # Cyan
 
 set -e
 
-echo "Обновляем пакеты и устанавливаем необходимые зависимости..."
+echo "📦 Обновляем пакеты и устанавливаем необходимые зависимости..."
 
 sudo apt update
 
-# Добавил pkg-config и libssl-dev для успешной сборки openssl-зависимостей в Rust
-sudo apt install -y git curl build-essential cmake protobuf-compiler docker.io docker-compose make pkg-config libssl-dev
+# Устанавливаем недостающие заголовки C и clang для bindgen/LLVM
+sudo apt install -y \
+  git curl build-essential cmake protobuf-compiler docker.io docker-compose make \
+  pkg-config libssl-dev clang libc6-dev
 
 # Запускаем и включаем Docker
 sudo systemctl start docker
@@ -24,30 +26,30 @@ sudo usermod -aG docker $USER || true
 
 # Устанавливаем grpcurl из релиза GitHub, если не найден
 if ! command -v grpcurl &> /dev/null; then
-  echo "grpcurl не найден, устанавливаем из релиза GitHub..."
+  echo "🔌 grpcurl не найден, устанавливаем из релиза GitHub..."
   GRPCURL_VER=1.8.7
   curl -LO https://github.com/fullstorydev/grpcurl/releases/download/v${GRPCURL_VER}/grpcurl_${GRPCURL_VER}_linux_x86_64.tar.gz
   tar -xzf grpcurl_${GRPCURL_VER}_linux_x86_64.tar.gz
   sudo mv grpcurl /usr/local/bin/
   rm grpcurl_${GRPCURL_VER}_linux_x86_64.tar.gz
 else
-  echo "grpcurl уже установлен."
+  echo "✅ grpcurl уже установлен."
 fi
 
 # Устанавливаем Rust и Cargo, если не установлены
 if ! command -v rustc &> /dev/null || ! command -v cargo &> /dev/null; then
-  echo "Rust и Cargo не найдены, устанавливаем..."
+  echo "🦀 Rust и Cargo не найдены, устанавливаем..."
   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
   source "$HOME/.cargo/env"
 else
-  echo "Rust и Cargo уже установлены."
+  echo "✅ Rust и Cargo уже установлены."
 fi
 
 # Обновляем Rust до последней стабильной версии
 rustup update stable
 
 echo
-echo "Проверяем установленные компоненты..."
+echo "🔍 Проверяем установленные компоненты..."
 
 missing=()
 
@@ -71,6 +73,7 @@ check_cmd curl
 check_cmd make
 check_cmd pkg-config
 check_cmd openssl
+check_cmd clang
 
 echo
 
