@@ -84,5 +84,6 @@ else
 fi
 
 echo
-echo -e "${B_RED}‼️${NO_COLOR} Чтобы применились изменения группы docker, перезапустите SSH сессию или выполните: newgrp docker"
-
+echo -e "${B_RED}‼️${NO_COLOR} Если вы запускаетесь не из под root, то необходимо применить изменения группы docker, перезапустив SSH сессию или выполнив: newgrp docker"
+echo
+echo -e "${B_GREEN} Для тех, уто запускает с правами root ничего больше не надо делать${NO_COLOR}"
