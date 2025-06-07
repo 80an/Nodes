@@ -13,16 +13,18 @@ clone_or_update_repo() {
 
   if [ -d "$dir_name/.git" ]; then
     echo "🔄 Обновляем репозиторий $dir_name..."
-    git -C "$dir_name" fetch --all
+    git -C "$dir_name" fetch origin
     git -C "$dir_name" checkout "$default_branch"
-    git -C "$dir_name" pull --rebase
-    git -C "$dir_name" checkout "$commit_hash"
+    git -C "$dir_name" pull --rebase origin "$default_branch"
   else
     echo "📦 Клонируем репозиторий $dir_name..."
     git clone "$repo_url" "$dir_name"
-    git -C "$dir_name" checkout "$commit_hash"
   fi
+
+  # Затем — checkout нужного коммита
+  git -C "$dir_name" checkout "$commit_hash"
 }
+
 
 echo "📁 Подготовка зависимостей..."
 
