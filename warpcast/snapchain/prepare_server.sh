@@ -2,9 +2,9 @@
 
 # Берем цвета
 source <(wget -qO- 'https://raw.githubusercontent.com/CBzeek/Nodes/refs/heads/main/!tools/bash-colors.sh')
-B_BLUE='\033[1;34m' # Blue 
+B_BLUE='\033[1;34m'   # Blue 
 B_PURPLE='\033[0;35m' # Purple 
-B_CYAN='\033[0;36m' # Cyan
+B_CYAN='\033[0;36m'   # Cyan
 
 set -e
 
@@ -12,7 +12,8 @@ echo "Обновляем пакеты и устанавливаем необхо
 
 sudo apt update
 
-sudo apt install -y git curl build-essential cmake protobuf-compiler docker.io docker-compose make
+# Добавил pkg-config и libssl-dev для успешной сборки openssl-зависимостей в Rust
+sudo apt install -y git curl build-essential cmake protobuf-compiler docker.io docker-compose make pkg-config libssl-dev
 
 # Запускаем и включаем Docker
 sudo systemctl start docker
@@ -68,6 +69,8 @@ check_cmd cmake
 check_cmd git
 check_cmd curl
 check_cmd make
+check_cmd pkg-config
+check_cmd openssl
 
 echo
 
@@ -86,4 +89,4 @@ fi
 echo
 echo -e "${B_RED}‼️${NO_COLOR} Если вы запускаетесь не из под root, то необходимо применить изменения группы docker, перезапустив SSH сессию или выполнив: newgrp docker"
 echo
-echo -e "${B_GREEN} Для тех, уто запускает с правами root ничего больше не надо делать${NO_COLOR}"
+echo -e "${B_GREEN}Для тех, кто запускает с правами root, ничего больше делать не нужно.${NO_COLOR}"
