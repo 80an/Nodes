@@ -41,6 +41,8 @@ function restore_udp_buffer() {
         return
     fi
     sudo cp "$BACKUP_FILE" "$SYSCTL_FILE"
+    sudo sysctl -w net.core.rmem_max=212992
+    sudo sysctl -w net.core.wmem_max=212992
     sudo sysctl -p
     echo -e "${B_GREEN}✅ Настройки UDP буфера восстановлены из бэкапа.${NO_COLOR}"
 }
