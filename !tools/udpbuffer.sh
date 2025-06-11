@@ -48,9 +48,10 @@ function restore_udp_buffer() {
 while true; do
     echo
     echo -e "${B_BLUE}========== Меню управления UDP буфером ==========${NO_COLOR}"
-    echo "1) Задать размер UDP буфера"
-    echo "2) Вернуть настройки UDP буфера к исходным"
-    echo "3) Выход"
+    echo "1) Задать размер буфера"
+    echo "2) Вернуть настройки буфера к исходным"
+    echo "3) Посмотреть текущий размер буфера"
+    echo "4) Выход"
     echo -e "${B_BLUE}===============================================${NO_COLOR}"
     echo
 
@@ -64,6 +65,13 @@ while true; do
             restore_udp_buffer
             ;;
         3)
+            sysctl net.core.rmem_default
+            sysctl net.core.rmem_max
+            sysctl net.core.wmem_default
+            sysctl net.core.wmem_max
+
+            ;;
+        4)
             echo "Выход..."
             break
             ;;
