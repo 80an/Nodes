@@ -55,9 +55,7 @@ while true; do
     echo -e "${B_BLUE}===============================================${NO_COLOR}"
     echo
 
-    read -p "Выберите пункт меню (1-3): " choice
-
-    echo
+    read -p "Выберите пункт меню (1-4): " choice
 
     case $choice in
         1)
@@ -67,6 +65,7 @@ while true; do
             restore_udp_buffer
             ;;
         3)
+            clear
             sysctl net.core.rmem_default
             sysctl net.core.rmem_max
             sysctl net.core.wmem_default
