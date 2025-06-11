@@ -57,6 +57,8 @@ while true; do
 
     read -p "Выберите пункт меню (1-3): " choice
 
+    echo
+
     case $choice in
         1)
             set_udp_buffer
