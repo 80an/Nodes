@@ -4,13 +4,13 @@ clear
 # Берем цвета
 source <(wget -qO- 'https://raw.githubusercontent.com/CBzeek/Nodes/refs/heads/main/!tools/bash-colors.sh')
 B_BLUE='\033[1;34m' # Blue
-
+echo
 echo "Очистка /var/log/btmp..."
 > /var/log/btmp && echo "/var/log/btmp очищен."
-
+echo
 echo "Проверка текущего размера журналов systemd..."
 journalctl --disk-usage
-
+echo
 echo -e "${B_BLUE}Очистка журналов systemd, оставляем не старше 1 дня и максимум 200МБ...${NO_COLOR}"
 journalctl --vacuum-size=200M
 journalctl --vacuum-time=1d && echo -e "${B_GREEN}Очистка завершена.${NO_COLOR}"
