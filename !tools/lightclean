@@ -1,0 +1,13 @@
+#!/bin/bash
+
+echo "Очистка /var/log/btmp..."
+> /var/log/btmp && echo "/var/log/btmp очищен."
+
+echo "Проверка текущего размера журналов systemd..."
+journalctl --disk-usage
+
+echo "Очистка журналов systemd, оставляем максимум 200МБ..."
+journalctl --vacuum-size=200M
+journalctl --vacuum-time=1d && echo "Очистка завершена."
+echo "Готово! Проверьте свободное место на диске:"
+df -h /
