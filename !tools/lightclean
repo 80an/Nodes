@@ -1,10 +1,9 @@
 #!/bin/bash
+clear
 
 # Берем цвета
 source <(wget -qO- 'https://raw.githubusercontent.com/CBzeek/Nodes/refs/heads/main/!tools/bash-colors.sh')
 B_BLUE='\033[1;34m' # Blue
-
-clear
 
 echo "Очистка /var/log/btmp..."
 > /var/log/btmp && echo "/var/log/btmp очищен."
