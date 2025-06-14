@@ -10,19 +10,35 @@ ENV_FILE="$HOME/.monitor_env"
 DISK_PID_FILE="/tmp/monitor_disk_pid"
 MEM_PID_FILE="/tmp/monitor_mem_pid"
 
-# Загрузка .env, если существует
-if [ -f "$ENV_FILE" ]; then
-  source "$ENV_FILE"
-fi
+# Проверка и загрузка .env
+init_env() {
+  if [ -f "$ENV_FILE" ]; then
+    source "$ENV_FILE"
+  fi
 
-# Настройка Telegram
-setup_telegram() {
-  echo -e "${B_YELLOW}🔧 Настройка Telegram...${NO_COLOR}"
-  read -p "Введите Telegram Bot Token: " TELEGRAM_BOT_TOKEN
-  read -p "Введите Telegram Chat ID: " TELEGRAM_CHAT_ID
-  echo "TELEGRAM_BOT_TOKEN=$TELEGRAM_BOT_TOKEN" > "$ENV_FILE"
-  echo "TELEGRAM_CHAT_ID=$TELEGRAM_CHAT_ID" >> "$ENV_FILE"
-  echo -e "${B_GREEN}✅ Telegram настройки сохранены.${NO_COLOR}"
+  changed=false
+
+  if [ -z "$TELEGRAM_BOT_TOKEN" ]; then
+    read -p "Введите Telegram Bot Token: " TELEGRAM_BOT_TOKEN
+    changed=true
+  fi
+
+  if [ -z "$TELEGRAM_CHAT_ID" ]; then
+    read -p "Введите Telegram Chat ID: " TELEGRAM_CHAT_ID
+    changed=true
+  fi
+
+  if [ -z "$SERVER_NAME" ]; then
+    read -p "Введите имя сервера (например: srv-node-01): " SERVER_NAME
+    changed=true
+  fi
+
+  if [ "$changed" = true ]; then
+    echo "TELEGRAM_BOT_TOKEN=\"$TELEGRAM_BOT_TOKEN\"" > "$ENV_FILE"
+    echo "TELEGRAM_CHAT_ID=\"$TELEGRAM_CHAT_ID\"" >> "$ENV_FILE"
+    echo "SERVER_NAME=\"$SERVER_NAME\"" >> "$ENV_FILE"
+    echo -e "${B_GREEN}✅ Настройки сохранены в $ENV_FILE${NO_COLOR}"
+  fi
 }
 
 # Отправка сообщений в Telegram
@@ -31,7 +47,7 @@ send_telegram_alert() {
   curl -s -X POST "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendMessage" \
     -d chat_id="$TELEGRAM_CHAT_ID" \
     -d parse_mode="HTML" \
-    -d text="$message" > /dev/null
+    -d text="<b>📡 $SERVER_NAME</b>%0A%0A${message}" > /dev/null
 }
 
 # Проверка диска
@@ -128,6 +144,18 @@ check_status() {
   echo -e "${status//\\n/$'\n'}"
 }
 
+# Настройка Telegram вручную
+setup_telegram() {
+  echo -e "${B_YELLOW}🔧 Настройка Telegram...${NO_COLOR}"
+  read -p "Введите Telegram Bot Token: " TELEGRAM_BOT_TOKEN
+  read -p "Введите Telegram Chat ID: " TELEGRAM_CHAT_ID
+  read -p "Введите имя сервера: " SERVER_NAME
+  echo "TELEGRAM_BOT_TOKEN=\"$TELEGRAM_BOT_TOKEN\"" > "$ENV_FILE"
+  echo "TELEGRAM_CHAT_ID=\"$TELEGRAM_CHAT_ID\"" >> "$ENV_FILE"
+  echo "SERVER_NAME=\"$SERVER_NAME\"" >> "$ENV_FILE"
+  echo -e "${B_GREEN}✅ Настройки сохранены.${NO_COLOR}"
+}
+
 # Меню
 menu() {
   echo
@@ -137,5 +165,22 @@ menu() {
   echo -e "3) ℹ️  Проверить статус мониторинга"
   echo -e "4) ⚙️  Настроить Telegram"
   echo -e "5) ❌ Выход"
-  echo -e "${B_YELLOW}===========================================_
+  echo -e "${B_YELLOW}==========================================================${NO_COLOR}"
+}
+
+# Основной блок
+init_env
+
+while true; do
+  menu
+  read -p "Выберите действие: " choice
+  case $choice in
+    1) start_monitoring ;;
+    2) stop_monitoring ;;
+    3) check_status ;;
+    4) setup_telegram ;;
+    5) echo "Выход..."; exit 0 ;;
+    *) echo -e "${B_RED}❗ Неверный выбор${NO_COLOR}" ;;
+  esac
+done
 
