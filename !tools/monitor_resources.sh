@@ -193,7 +193,7 @@ while true; do
     2) stop_monitoring ;;
     3) check_status ;;
     4) setup_variables ;;
-    5) echo "Выход..."; return ;;
+    5) echo -e "${B_GREEN}Выход в терминал...${NO_COLOR}"; break ;;
     *) echo -e "${B_RED}❗ Неверный выбор${NO_COLOR}" ;;
   esac
 done
