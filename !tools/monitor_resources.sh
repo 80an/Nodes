@@ -193,7 +193,7 @@ while true; do
     2) stop_monitoring ;;
     3) check_status ;;
     4) setup_variables ;;
-    5) echo "Выход..."; exit 0 ;;
+    5) echo "Выход..."; return ;;
     *) echo -e "${B_RED}❗ Неверный выбор${NO_COLOR}" ;;
   esac
 done
