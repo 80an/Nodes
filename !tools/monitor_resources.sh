@@ -7,8 +7,8 @@ B_RED="\e[31m"
 NO_COLOR="\e[0m"
 
 ENV_FILE="$HOME/.monitor_env"
-DISK_PID_FILE="/tmp/check_disk_space.pid"
-MEM_PID_FILE="/tmp/check_memory.pid"
+DISK_PID_FILE="/tmp/monitor_disk_pid"
+MEM_PID_FILE="/tmp/monitor_mem_pid"
 
 # Загрузка .env, если существует
 if [ -f "$ENV_FILE" ]; then
@@ -34,10 +34,11 @@ send_telegram_alert() {
     -d text="$message" > /dev/null
 }
 
-# Функция проверки дискового пространства
+# Проверка диска
 check_disk_space() {
   while true; do
     disk_usage=$(df -h / | awk 'NR==2 {print $5}' | tr -d '%')
+
     if [ "$disk_usage" -ge 100 ]; then
       send_telegram_alert "❌ ДИСК ЗАПОЛНЕН НА 100%! Требуется немедленное вмешательство!"
     elif [ "$disk_usage" -ge 98 ]; then
@@ -45,11 +46,12 @@ check_disk_space() {
     elif [ "$disk_usage" -ge 96 ]; then
       send_telegram_alert "⚠️ Предупреждение: диск заполнен на ${disk_usage}%. Задумайтесь о том, чтобы освободить место."
     fi
+
     sleep 300
   done
 }
 
-# Функция проверки оперативной памяти
+# Проверка памяти
 check_memory() {
   while true; do
     mem_total=$(grep MemTotal /proc/meminfo | awk '{print $2}')
@@ -64,6 +66,7 @@ check_memory() {
     elif [ "$mem_usage_percent" -ge 85 ]; then
       send_telegram_alert "⚠️ Использование памяти превышает 85% (${mem_usage_percent}%)."
     fi
+
     sleep 300
   done
 }
@@ -77,7 +80,6 @@ start_monitoring() {
 
   echo -e "${B_GREEN}▶️ Запуск мониторинга ресурсов...${NO_COLOR}"
 
-  # Запуск внутренних функций в фоне
   check_disk_space & echo $! > "$DISK_PID_FILE"
   check_memory & echo $! > "$MEM_PID_FILE"
 
@@ -95,35 +97,35 @@ EOF
   send_telegram_alert "$message"
 }
 
-
 # Остановка мониторинга
 stop_monitoring() {
   if [ -f "$DISK_PID_FILE" ]; then
-    kill "$(cat $DISK_PID_FILE)" 2>/dev/null && rm -f "$DISK_PID_FILE"
-    echo -e "${B_RED}⛔ Мониторинг диска остановлен.${NO_COLOR}"
+    kill "$(cat "$DISK_PID_FILE")" 2>/dev/null && echo -e "${B_RED}⛔ Диск-монитор остановлен.${NO_COLOR}"
+    rm -f "$DISK_PID_FILE"
   fi
-
   if [ -f "$MEM_PID_FILE" ]; then
-    kill "$(cat $MEM_PID_FILE)" 2>/dev/null && rm -f "$MEM_PID_FILE"
-    echo -e "${B_RED}⛔ Мониторинг памяти остановлен.${NO_COLOR}"
+    kill "$(cat "$MEM_PID_FILE")" 2>/dev/null && echo -e "${B_RED}⛔ RAM-монитор остановлен.${NO_COLOR}"
+    rm -f "$MEM_PID_FILE"
   fi
-
   send_telegram_alert "⛔ Мониторинг ресурсов остановлен"
 }
 
 # Проверка статуса
 check_status() {
-  if [ -f "$DISK_PID_FILE" ] && kill -0 "$(cat $DISK_PID_FILE)" 2>/dev/null; then
-    echo -e "${B_GREEN}💾 Мониторинг диска запущен (PID $(cat $DISK_PID_FILE))${NO_COLOR}"
+  local status=""
+  if [ -f "$DISK_PID_FILE" ] && kill -0 "$(cat "$DISK_PID_FILE")" 2>/dev/null; then
+    status+="💾 Диск-монитор: <b>работает</b>\n"
   else
-    echo -e "${B_RED}💾 Мониторинг диска остановлен${NO_COLOR}"
+    status+="💾 Диск-монитор: <b>остановлен</b>\n"
   fi
 
-  if [ -f "$MEM_PID_FILE" ] && kill -0 "$(cat $MEM_PID_FILE)" 2>/dev/null; then
-    echo -e "${B_GREEN}🧠 Мониторинг памяти запущен (PID $(cat $MEM_PID_FILE))${NO_COLOR}"
+  if [ -f "$MEM_PID_FILE" ] && kill -0 "$(cat "$MEM_PID_FILE")" 2>/dev/null; then
+    status+="🧠 RAM-монитор: <b>работает</b>"
   else
-    echo -e "${B_RED}🧠 Мониторинг памяти остановлен${NO_COLOR}"
+    status+="🧠 RAM-монитор: <b>остановлен</b>"
   fi
+
+  echo -e "${status//\\n/$'\n'}"
 }
 
 # Меню
@@ -135,23 +137,5 @@ menu() {
   echo -e "3) ℹ️  Проверить статус мониторинга"
   echo -e "4) ⚙️  Настроить Telegram"
   echo -e "5) ❌ Выход"
-  echo -e "${B_YELLOW}===========================================================${NO_COLOR}"
-}
-
-# Основной цикл
-while true; do
-  menu
-  read -p "Выберите действие: " choice
-  case $choice in
-    1) start_monitoring ;;
-    2) stop_monitoring ;;
-    3) check_status ;;
-    4) setup_telegram ;;
-    5)
-      echo -e "${B_YELLOW}👋 Выход...${NO_COLOR}"
-      break
-      ;;
-    *) echo -e "${B_RED}Неверный выбор. Повторите.${NO_COLOR}" ;;
-  esac
-done
+  echo -e "${B_YELLOW}===========================================_
 
