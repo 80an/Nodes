@@ -112,7 +112,6 @@ start_monitoring() {
   mem_info=$(free -h | awk '/Mem:/{print $3 " / " $2}')
 
   read -r -d '' message <<EOF
-<b>$SERVER_NAME</b>
 ✅ <b>Мониторинг ресурсов запущен</b>
 
 📊 <b>Ресурсы:</b>
