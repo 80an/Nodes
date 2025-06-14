@@ -128,20 +128,31 @@ stop_monitoring() {
 
 # Проверка статуса
 check_status() {
-  local status=""
-  if [ -f "$DISK_PID_FILE" ] && kill -0 "$(cat "$DISK_PID_FILE")" 2>/dev/null; then
-    status+="💾 Диск-монитор: <b>работает</b>\n"
+  echo -e "${B_YELLOW}📊 Статус мониторинга ресурсов:${NO_COLOR}"
+
+  if [ -f "$DISK_PID_FILE" ]; then
+    disk_pid=$(cat "$DISK_PID_FILE")
+    if kill -0 "$disk_pid" 2>/dev/null; then
+      start_time=$(ps -p "$disk_pid" -o lstart=)
+      echo -e "💾 Диск-монитор: ${B_GREEN}работает${NO_COLOR} (PID: $disk_pid, запущен: $start_time)"
+    else
+      echo -e "💾 Диск-монитор: ${B_RED}остановлен${NO_COLOR} (PID: $disk_pid — неактивен)"
+    fi
   else
-    status+="💾 Диск-монитор: <b>остановлен</b>\n"
+    echo -e "💾 Диск-монитор: ${B_RED}остановлен${NO_COLOR}"
   fi
 
-  if [ -f "$MEM_PID_FILE" ] && kill -0 "$(cat "$MEM_PID_FILE")" 2>/dev/null; then
-    status+="🧠 RAM-монитор: <b>работает</b>"
+  if [ -f "$MEM_PID_FILE" ]; then
+    mem_pid=$(cat "$MEM_PID_FILE")
+    if kill -0 "$mem_pid" 2>/dev/null; then
+      start_time=$(ps -p "$mem_pid" -o lstart=)
+      echo -e "🧠 RAM-монитор: ${B_GREEN}работает${NO_COLOR} (PID: $mem_pid, запущен: $start_time)"
+    else
+      echo -e "🧠 RAM-монитор: ${B_RED}остановлен${NO_COLOR} (PID: $mem_pid — неактивен)"
+    fi
   else
-    status+="🧠 RAM-монитор: <b>остановлен</b>"
+    echo -e "🧠 RAM-монитор: ${B_RED}остановлен${NO_COLOR}"
   fi
-
-  echo -e "${status//\\n/$'\n'}"
 }
 
 # Настройка переменных окружения
