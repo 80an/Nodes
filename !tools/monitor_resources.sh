@@ -77,6 +77,7 @@ start_monitoring() {
 
   echo -e "${B_GREEN}▶️ Запуск мониторинга ресурсов...${NO_COLOR}"
 
+  # Запуск внутренних функций в фоне
   check_disk_space & echo $! > "$DISK_PID_FILE"
   check_memory & echo $! > "$MEM_PID_FILE"
 
@@ -93,6 +94,7 @@ EOF
 
   send_telegram_alert "$message"
 }
+
 
 # Остановка мониторинга
 stop_monitoring() {
