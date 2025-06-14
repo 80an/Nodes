@@ -111,8 +111,8 @@ start_monitoring() {
   disk_usage=$(df -h / | awk 'NR==2{print $5}')
   mem_info=$(free -h | awk '/Mem:/{print $3 " / " $2}')
 
-  read -r -d '' message <<EOF
-✅ Мониторинг ресурсов запущен
+   read -r -d '' message <<EOF
+<b>✅ Мониторинг ресурсов запущен</b>
 
 📊 <b>Ресурсы:</b>
 • 💾 Диск: $disk_usage
