@@ -96,13 +96,22 @@ start_monitoring() {
 
   echo -e "${B_GREEN}▶️ Запуск мониторинга ресурсов...${NO_COLOR}"
 
-  check_disk_space & echo $! > "$DISK_PID_FILE"
-  check_memory & echo $! > "$MEM_PID_FILE"
+  nohup bash -c '
+    '"$(declare -f check_disk_space)"'
+    check_disk_space
+  ' > /dev/null 2>&1 & echo $! > "$DISK_PID_FILE"
+  disown
+
+  nohup bash -c '
+    '"$(declare -f check_memory)"'
+    check_memory
+  ' > /dev/null 2>&1 & echo $! > "$MEM_PID_FILE"
+  disown
 
   disk_usage=$(df -h / | awk 'NR==2{print $5}')
   mem_info=$(free -h | awk '/Mem:/{print $3 " / " $2}')
 
-  read -r -d '' message <<EOF
+   read -r -d '' message <<EOF
 <b>✅ Мониторинг ресурсов запущен</b>
 
 📊 <b>Ресурсы:</b>
