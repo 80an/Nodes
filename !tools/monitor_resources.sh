@@ -144,17 +144,20 @@ check_status() {
   echo -e "${status//\\n/$'\n'}"
 }
 
-# Настройка Telegram вручную
-setup_telegram() {
-  echo -e "${B_YELLOW}🔧 Настройка Telegram...${NO_COLOR}"
+# Настройка переменных окружения
+setup_variables() {
+  echo -e "${B_YELLOW}🔧 Настройка переменных окружения...${NO_COLOR}"
   read -p "Введите Telegram Bot Token: " TELEGRAM_BOT_TOKEN
   read -p "Введите Telegram Chat ID: " TELEGRAM_CHAT_ID
   read -p "Введите имя сервера: " SERVER_NAME
+
   echo "TELEGRAM_BOT_TOKEN=\"$TELEGRAM_BOT_TOKEN\"" > "$ENV_FILE"
   echo "TELEGRAM_CHAT_ID=\"$TELEGRAM_CHAT_ID\"" >> "$ENV_FILE"
   echo "SERVER_NAME=\"$SERVER_NAME\"" >> "$ENV_FILE"
-  echo -e "${B_GREEN}✅ Настройки сохранены.${NO_COLOR}"
+
+  echo -e "${B_GREEN}✅ Все переменные успешно сохранены.${NO_COLOR}"
 }
+
 
 # Меню
 menu() {
@@ -163,7 +166,7 @@ menu() {
   echo -e "1) ▶️  Запустить мониторинг"
   echo -e "2) ⏹  Остановить мониторинг"
   echo -e "3) ℹ️  Проверить статус мониторинга"
-  echo -e "4) ⚙️  Настроить Telegram"
+  echo -e "4) ⚙️  Настроить переменные"
   echo -e "5) ❌ Выход"
   echo -e "${B_YELLOW}==========================================================${NO_COLOR}"
 }
@@ -174,11 +177,11 @@ init_env
 while true; do
   menu
   read -p "Выберите действие: " choice
-  case $choice in
+    case $choice in
     1) start_monitoring ;;
     2) stop_monitoring ;;
     3) check_status ;;
-    4) setup_telegram ;;
+    4) setup_variables ;;
     5) echo "Выход..."; exit 0 ;;
     *) echo -e "${B_RED}❗ Неверный выбор${NO_COLOR}" ;;
   esac
