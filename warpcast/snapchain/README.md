@@ -36,3 +36,8 @@ sudo systemctl status docker
 docker compose ps
 ```
 Покажет статус всех контейнеров (они должны быть в состоянии Up).
+
+Скрин
+```
+sudo apt install screen -y && screen -Rd snapchain
+```
