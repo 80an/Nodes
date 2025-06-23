@@ -31,23 +31,29 @@ EOF
 # === Фоновая функция мониторинга ===
 monitor_loop() {
   while true; do
-    current_height=$(grep "added to validated blocks at" "$LOG_FILE" | tail -n 1 | awk '{print $(NF-5)}')
-    max_seen_height=$(grep "heard block" "$LOG_FILE" | tail -n 100 | awk '{print $(NF-5)}' | sed 's/\.//' | sort -nr | head -n 1)
+    if [[ -f "$LOG_FILE" ]]; then
+      current_height=$(grep -a "added to validated blocks at" "$LOG_FILE" | tail -n 1 | sed -n 's/.*added to validated blocks at \([0-9.]*\).*/\1/p')
+      max_seen_height=$(grep -a "heard block" "$LOG_FILE" | tail -n 100 | sed -n 's/.*heard block.* at height \([0-9.]*\).*/\1/p' | sed 's/\.//' | sort -nr | head -n 1)
 
-    message="🧱 <b>Блоки ноды: $SERVER_NAME</b>
+      if [[ -n "$current_height" || -n "$max_seen_height" ]]; then
+        message="🧱 <b>Блоки ноды: $SERVER_NAME</b>
 • 📥 Текущий блок: <code>$current_height</code>
 • 🌐 Увиденная высота сети: <code>$max_seen_height</code>"
 
-    curl -s -X POST "https://api.telegram.org/bot$BOT_TOKEN/sendMessage" \
-         -d chat_id="$CHAT_ID" \
-         -d parse_mode="HTML" \
-         -d text="$message"
+        curl -s -X POST "https://api.telegram.org/bot$BOT_TOKEN/sendMessage" \
+          -d chat_id="$CHAT_ID" \
+          -d parse_mode="HTML" \
+          -d text="$message"
+      else
+        echo "[!] Не удалось получить значения блоков из логов." >> /var/log/nock_monitor.log
+      fi
 
-    # Ротация логов
-    if [[ -f "$LOG_FILE" ]]; then
+      # Ротация лога (обрезка до последних 1000 строк)
       cp "$LOG_FILE" "$BACKUP_FILE"
       tail -n 1000 "$LOG_FILE" > "${LOG_FILE}.tmp"
       mv "${LOG_FILE}.tmp" "$LOG_FILE"
+    else
+      echo "[!] Файл логов не найден: $LOG_FILE" >> /var/log/nock_monitor.log
     fi
 
     sleep "$INTERVAL"
