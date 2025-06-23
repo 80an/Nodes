@@ -60,7 +60,9 @@ monitor_loop() {
   done
 }
 
-# === Запуск ===
-load_config
-echo "✅ Мониторинг блоков \"$SERVER_NAME\" запущен (раз в $((INTERVAL / 3600)) ч)..."
-monitor_loop & disown
+# ⏩ Автозапуск в фоне
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  echo "[i] Запускается фоновый мониторинг..."
+  bash -c "$(declare -f monitor_loop); monitor_loop" >> /var/log/nock_monitor.log 2>&1 &
+  disown
+fi
