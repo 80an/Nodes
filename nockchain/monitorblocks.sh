@@ -60,9 +60,6 @@ monitor_loop() {
   done
 }
 
-# ⏩ Автозапуск в фоне
-if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-  echo "[i] Запускается фоновый мониторинг..."
-  bash -c "$(declare -f monitor_loop); monitor_loop" >> /var/log/nock_monitor.log 2>&1 &
-  disown
-fi
+# Автоматический запуск в фоне с логом и без подвязки к сессии
+bash -c "$(declare -f monitor_loop); monitor_loop" >> /var/log/nock_monitor.log 2>&1 &
+disown
