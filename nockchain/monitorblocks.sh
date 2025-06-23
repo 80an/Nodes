@@ -60,8 +60,12 @@ monitor_loop() {
   done
 }
 
-# === Загрузить конфиг и запустить в фоне ===
+# === Загрузить конфиг ===
 load_config
+
+# === Запустить мониторинг в фоне с передачей переменных ===
+export BOT_TOKEN CHAT_ID SERVER_NAME INTERVAL LOG_FILE BACKUP_FILE
 
 bash -c "$(declare -f monitor_loop); monitor_loop" >> /var/log/nock_monitor.log 2>&1 &
 disown
+
