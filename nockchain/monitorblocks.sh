@@ -60,6 +60,8 @@ monitor_loop() {
   done
 }
 
-# Автоматический запуск в фоне с логом и без подвязки к сессии
+# === Загрузить конфиг и запустить в фоне ===
+load_config
+
 bash -c "$(declare -f monitor_loop); monitor_loop" >> /var/log/nock_monitor.log 2>&1 &
 disown
