@@ -1,7 +1,6 @@
 #!/bin/bash
 
 install_0g_validator() {
-  # === Настройки по умолчанию ===
   NODE_NAME=${NODE_NAME:-"0g-node"}
   DATA_PATH=${DATA_PATH:-"$HOME/0g-data"}
   NODE_IP=${NODE_IP:-"$(curl -s ifconfig.me)"}
@@ -9,16 +8,14 @@ install_0g_validator() {
 
   echo "🔧 Установка ноды 0G | Node name: $NODE_NAME | Data path: $DATA_PATH | Node IP: $NODE_IP"
 
-  # === Загрузка архива ===
   echo "⬇️  Загрузка пакета ноды..."
   wget -O galileo.tar.gz "$PACKAGE_URL"
 
-  # === Распаковка ===
   echo "📦 Распаковка архива..."
+  EXTRACTED_DIR=$(tar -tzf galileo.tar.gz | head -1 | cut -f1 -d"/")
   tar -xzvf galileo.tar.gz -C "$HOME"
+  cd "$HOME/$EXTRACTED_DIR" || exit 1
 
-  # === Копирование и права ===
-  cd "$HOME/galileo" || exit 1
   echo "📁 Копирование конфигов..."
   mkdir -p "$DATA_PATH"
   cp -r 0g-home "$DATA_PATH"
@@ -27,22 +24,18 @@ install_0g_validator() {
   chmod +x ./bin/geth
   chmod +x ./bin/0gchaind
 
-  # === Инициализация Geth ===
   echo "⚙️  Инициализация Geth..."
   ./bin/geth init --datadir "$DATA_PATH/0g-home/geth-home" ./genesis.json
 
-  # === Инициализация 0gchaind ===
   echo "⚙️  Инициализация 0gchaind..."
   ./bin/0gchaind init "$NODE_NAME" --home "$DATA_PATH/tmp"
 
-  # === Перемещение файлов ===
   echo "🚚 Копирование ключей..."
   cp "$DATA_PATH/tmp/data/priv_validator_state.json" "$DATA_PATH/0g-home/0gchaind-home/data/"
   cp "$DATA_PATH/tmp/config/node_key.json" "$DATA_PATH/0g-home/0gchaind-home/config/"
   cp "$DATA_PATH/tmp/config/priv_validator_key.json" "$DATA_PATH/0g-home/0gchaind-home/config/"
   rm -rf "$DATA_PATH/tmp"
 
-  # === Запуск 0gchaind ===
   echo "🚀 Запуск 0gchaind..."
   nohup ./bin/0gchaind start \
     --rpc.laddr tcp://0.0.0.0:26657 \
@@ -60,7 +53,6 @@ install_0g_validator() {
     --p2p.external_address "$NODE_IP:26656" \
     > "$DATA_PATH/0g-home/log/0gchaind.log" 2>&1 &
 
-  # === Запуск Geth ===
   echo "🚀 Запуск Geth..."
   nohup ./bin/geth --config geth-config.toml \
     --nat extip:"$NODE_IP" \
@@ -69,12 +61,9 @@ install_0g_validator() {
     --networkid 16601 \
     > "$DATA_PATH/0g-home/log/geth.log" 2>&1 &
 
-  # === Проверка ===
   echo "✅ Установка завершена. Проверка логов:"
-  echo "------ geth.log (последние строки) ------"
-  tail -n 10 "$DATA_PATH/0g-home/log/geth.log"
-  echo "------ 0gchaind.log (последние строки) ------"
   tail -n 10 "$DATA_PATH/0g-home/log/0gchaind.log"
+  tail -n 10 "$DATA_PATH/0g-home/log/geth.log"
 }
 
 echo "✅ Функция install_0g_validator загружена. Запусти её:"
