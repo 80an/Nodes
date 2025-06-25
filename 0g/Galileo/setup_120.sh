@@ -9,16 +9,35 @@ install_0g_validator() {
   echo "🔧 Установка ноды 0G | Node name: $NODE_NAME | Data path: $DATA_PATH | Node IP: $NODE_IP"
 
   echo "⬇️  Загрузка пакета ноды..."
-  wget -O galileo.tar.gz "$PACKAGE_URL"
+  wget -O galileo.tar.gz "$PACKAGE_URL" || {
+    echo "❌ Ошибка загрузки архива"
+    return 1
+  }
 
   echo "📦 Распаковка архива..."
-  EXTRACTED_DIR=$(tar -tzf galileo.tar.gz | head -1 | cut -f1 -d"/")
-  tar -xzvf galileo.tar.gz -C "$HOME"
-  cd "$HOME/$EXTRACTED_DIR" || exit 1
+  tar -xzvf galileo.tar.gz -C "$HOME" || {
+    echo "❌ Ошибка распаковки архива"
+    return 1
+  }
+
+  # Определение имени директории после распаковки
+  EXTRACTED_PATH=$(find "$HOME" -maxdepth 1 -type d -name "galileo-v*" | sort | tail -n1)
+  if [[ ! -d "$EXTRACTED_PATH" ]]; then
+    echo "❌ Не удалось определить распакованную директорию"
+    return 1
+  fi
+
+  cd "$EXTRACTED_PATH" || {
+    echo "❌ Не удалось перейти в директорию $EXTRACTED_PATH"
+    return 1
+  }
 
   echo "📁 Копирование конфигов..."
   mkdir -p "$DATA_PATH"
-  cp -r 0g-home "$DATA_PATH"
+  cp -r 0g-home "$DATA_PATH" || {
+    echo "❌ Не найдена директория 0g-home"
+    return 1
+  }
 
   echo "🔐 Установка прав..."
   chmod +x ./bin/geth
@@ -70,4 +89,4 @@ echo "✅ Функция install_0g_validator загружена. Запусти
 echo "   install_0g_validator"
 echo
 echo "👉 Или с переменными:"
-echo "   NODE_NAME=my-node DATA_PATH=/data/0g install_0g_validator"
+echo "   NODE_NAME=my-node DATA_PATH=/mnt/0g install_0g_validator"
