@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Файл для хранения переменных
-VARS_FILE="$HOME/.nexus_vars"
+VARS_FILE="/root/.nexus_vars"
 
 # === 1. Ввод переменных, если их ещё нет ===
 if [[ ! -f "$VARS_FILE" ]]; then
