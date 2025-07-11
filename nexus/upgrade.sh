@@ -2,6 +2,7 @@
 
 # Файл для хранения переменных
 VARS_FILE="/root/.nexus_vars"
+BASHRC_FILE="/root/.bashrc"
 
 # === 1. Ввод переменных, если их ещё нет ===
 if [[ ! -f "$VARS_FILE" ]]; then
@@ -19,6 +20,14 @@ if [[ ! -f "$VARS_FILE" ]]; then
   echo "MAX_THREADS=$MAX_THREADS" >> "$VARS_FILE"
 else
   source "$VARS_FILE"
+fi
+
+# === 1.5. Добавляем в .bashrc автоподгрузку переменных, если ещё не добавлено ===
+if ! grep -q "$VARS_FILE" "$BASHRC_FILE"; then
+  echo "" >> "$BASHRC_FILE"
+  echo "# Автозагрузка переменных Nexus" >> "$BASHRC_FILE"
+  echo "[ -f $VARS_FILE ] && source $VARS_FILE" >> "$BASHRC_FILE"
+  echo "📌 Добавлено автоподключение переменных в $BASHRC_FILE"
 fi
 
 # === 2. Получаем текущую и новую версии ===
