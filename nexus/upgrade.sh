@@ -44,7 +44,7 @@ if [[ "$LOCAL_VERSION" != "$REMOTE_VERSION" ]]; then
   fi
 
   # Запускаем контейнер в новой screen-сессии
-  screen -dmS nexus bash -c "docker run -it --init --name nexus nexusxyz/nexus-cli:latest start --node-id $NODE_ID --max-threads $MAX_THREADS"
+  screen -dmS nexus bash -c "docker run --init --name nexus nexusxyz/nexus-cli:latest start --node-id $NODE_ID --max-threads $MAX_THREADS"
 
   echo ""
   echo "✅ Обновлённая сессия 'nexus' запущена."
